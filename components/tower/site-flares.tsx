@@ -17,11 +17,13 @@ const rank = (flares: Flare[]) =>
 export function SiteFlares({
   siteId,
   vendorName,
+  verified = false,
   initial,
   index = ["01", "02"],
 }: {
   siteId: string;
   vendorName: string;
+  verified?: boolean;
   initial: Flare[];
   index?: [string, string];
 }) {
@@ -45,6 +47,7 @@ export function SiteFlares({
                 key={f.id}
                 flare={f}
                 vendorName={vendorName}
+                verified={verified}
                 rateable
                 onRated={(next) => setFlares((prev) => prev.map((x) => (x.id === next.id ? { ...x, ...next } : x)))}
               />

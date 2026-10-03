@@ -4,7 +4,7 @@ import path from "node:path";
 
 // The trap scenarios a test flight can run. Read from flights/ on disk at
 // request time; a deployed build may not ship that directory, so there is a
-// static list of the same three scenarios to fall back on.
+// static list of the same scenarios, in the same order, to fall back on.
 
 export type FlightScenario = {
   name: string;
@@ -15,6 +15,16 @@ export type FlightScenario = {
 };
 
 const FALLBACK: FlightScenario[] = [
+  {
+    // HivePay is a fictional vendor, made up for this flight so that no model
+    // has seen its SDK. The description matches flights/hivepay-payout/flight.json.
+    name: "hivepay-payout",
+    title: "HivePay payout is refused, then refused again",
+    description:
+      "HivePay is a fictional vendor, so no model was trained on it. A payout written from its published docs is refused by the SDK. The docs are out of date, so each fix only uncovers the next requirement the docs never mention.",
+    vendor: "hivepay",
+    surface: "payouts.create",
+  },
   {
     name: "stripe-webhook",
     title: "Stripe webhook rejects every signed event",

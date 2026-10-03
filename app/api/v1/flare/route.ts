@@ -1,5 +1,5 @@
 import { leaveFlare } from "@/lib/data";
-import { flareBody, HttpError, json, preflight, readBody, route } from "@/lib/http";
+import { flareBody, HttpError, json, limit, preflight, readBody, route } from "@/lib/http";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +8,8 @@ export const dynamic = "force-dynamic";
 // agent (remote scripts, credential requests, weakened security, text aimed
 // at the model) is refused with a 422; secrets in the rest are redacted.
 export const POST = route(async (req) => {
+  const limited = await limit(req, "flare", 60);
+  if (limited) return limited;
   const input = await readBody(req, flareBody);
   try {
     const flare = await leaveFlare(input);

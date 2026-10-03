@@ -1,3 +1,4 @@
+import { UNTRUSTED_HEADER } from "@/lib/redact";
 import type { Briefing, Flare, Rescue } from "@/lib/types";
 
 // Text the cockpit prints in its transcript. The MCP server owns the real
@@ -10,7 +11,25 @@ export type RescueResponse = {
   billable?: boolean;
   billed?: boolean;
   stripe_event?: string | null;
+  // Why a rescue was not billed, when the API says.
+  billing_note?: string | null;
+  // True when this mayday had already been confirmed: nothing was counted or billed again.
+  duplicate?: boolean;
 };
+
+// The messages the cockpit shows for the API's refusals, word for word.
+export const DUPLICATE_RESCUE = "Already confirmed: a mayday can only be rescued, and billed, once.";
+export const RATE_LIMITED = "Rate limit reached, try again in a minute.";
+const FLARE_REJECTED = /^Flare rejected:\s*/i;
+
+// A failed call, in the cockpit's words. `refused` marks a flare Mayday screened out.
+export function failureOf(status: number | null, error: string): { title: string; body: string; refused: boolean } {
+  if (status === 429) return { title: "Rate limit", body: RATE_LIMITED, refused: false };
+  if (status === 422 && FLARE_REJECTED.test(error)) {
+    return { title: "Flare refused", body: `Mayday refused this flare: ${error.replace(FLARE_REJECTED, "")}`, refused: true };
+  }
+  return { title: "Request failed", body: error, refused: false };
+}
 
 type McpFormatters = {
   formatBriefing?: (b: Briefing) => string;
@@ -51,7 +70,7 @@ export function billingLine(r: Pick<RescueResponse, "vendor" | "billable" | "bil
   const who = vendorName ?? r.vendor;
   if (r.billed) return `Billed to the ${who} tower via Stripe`;
   if (r.billable) return `Billable to the ${who} tower: not sent to Stripe yet`;
-  return "Not billable: no official fix or airspace unclaimed";
+  return "Not billable: not a vendor-pinned fix in claimed airspace, or not tied to a recent mayday here";
 }
 
 function localFlare(f: Flare, n: number, tower: string): string {
@@ -70,6 +89,8 @@ export function localBriefing(b: Briefing): string {
     return out.join("\n\n");
   }
   const s = b.site;
+  // The same envelope the MCP server puts in front of other agents' text.
+  out.unshift(UNTRUSTED_HEADER);
   if (b.new_site) out.push("You are the first to report this: a new crash site is now on the map.");
   out.push(
     `Crash site: ${s.title}\n${s.vendor} · ${s.surface} · ${s.maydays_count} maydays · ${s.rescues_count} rescues`,
@@ -102,7 +123,17 @@ function localFlareLeft(f: Flare): string {
 }
 
 export const briefingText = (b: Briefing) => viaMcp((m) => m.formatBriefing, b, localBriefing);
-export const rescueText = (r: RescueResponse) => viaMcp((m) => m.formatRescue, r, localRescue);
+
+// A rescue as the transcript prints it. A repeat confirmation says so first,
+// and a billing note from the API is printed as it came.
+export async function rescueText(r: RescueResponse): Promise<string> {
+  const text = await viaMcp((m) => m.formatRescue, r, localRescue);
+  const lines: string[] = [];
+  if (r.duplicate) lines.push(DUPLICATE_RESCUE, "This is the first rescue, returned unchanged:");
+  lines.push(text);
+  if (r.billing_note) lines.push(`Billing note: ${r.billing_note}`);
+  return lines.join("\n");
+}
 export const flareLeftText = (f: Flare) => viaMcp((m) => m.formatFlareLeft, f, localFlareLeft);
 
 export function ratedText(f: Flare): string {

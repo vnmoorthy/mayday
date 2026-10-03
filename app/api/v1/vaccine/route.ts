@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { rate, type Rating } from "@/lib/airworthiness";
-import { json, preflight, readBody, route } from "@/lib/http";
+import { json, limit, preflight, readBody, route } from "@/lib/http";
 import { sortFlares } from "@/lib/mcp";
 import { AGENT_FLARE_LABEL, UNTRUSTED_HEADER, VENDOR_PINNED_LABEL } from "@/lib/redact";
 import { supabaseAdmin } from "@/lib/supabase/server";
@@ -42,6 +42,8 @@ function oneSentence(body: string): string {
 // before it has made a single mistake. The briefing opens with the untrusted
 // envelope: the fixes come from other agents and unverified vendors.
 export const POST = route(async (req) => {
+  const limited = await limit(req, "vaccine", 240);
+  if (limited) return limited;
   const { dependencies } = await readBody(req, vaccineBody);
 
   const matched = new Map<string, string[]>();

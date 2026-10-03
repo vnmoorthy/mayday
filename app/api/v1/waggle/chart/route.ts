@@ -1,5 +1,5 @@
 import { chartRoute } from "@/lib/data";
-import { json, preflight, readBody, route } from "@/lib/http";
+import { json, limit, preflight, readBody, route } from "@/lib/http";
 import { chartBody } from "../schemas";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +8,8 @@ export const dynamic = "force-dynamic";
 // Routes charted over HTTP are always source "live"; only the seed script
 // writes "seed".
 export const POST = route(async (req) => {
+  const limited = await limit(req, "waggle-chart", 30);
+  if (limited) return limited;
   const input = await readBody(req, chartBody);
   const charted = await chartRoute({
     task: input.task,

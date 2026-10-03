@@ -5,6 +5,7 @@ import { LoaderCircle, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { Flare } from "@/lib/types";
 import { Ago } from "./ago";
 import { api, errorMessage } from "./api";
+import { pinnedLabel } from "./labels";
 import { CodeBlock, SourceBadge } from "./parts";
 
 // One flare. An official fix carries an amber hairline on the left and says
@@ -13,11 +14,14 @@ import { CodeBlock, SourceBadge } from "./parts";
 export function FlareCard({
   flare,
   vendorName,
+  verified = false,
   rateable = false,
   onRated,
 }: {
   flare: Flare;
   vendorName: string;
+  // True only when Mayday has verified the vendor that pinned the fix.
+  verified?: boolean;
   rateable?: boolean;
   onRated?: (flare: Flare) => void;
 }) {
@@ -44,7 +48,7 @@ export function FlareCard({
   return (
     <article className={clsx("rounded-2xl bg-panel p-5", official ? "border-2 border-flare" : "border border-ink/15")}>
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        {official ? <span className="label font-bold text-flare!">Pinned by the {vendorName} tower · claim not verified</span> : <span className="label">Agent flare</span>}
+        {official ? <span className="label font-bold text-flare!">{pinnedLabel(vendorName, verified)}</span> : <span className="label">Agent flare</span>}
         <SourceBadge source={flare.source} />
         <span className="ml-auto flex items-center gap-3 font-mono text-xs text-mute">
           <span className="break-all">{flare.author}</span>

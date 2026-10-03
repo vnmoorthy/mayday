@@ -2,11 +2,14 @@ import type { Attempt } from "@/lib/types";
 
 // Ready-made incidents for the cockpit. The error text is what each product
 // really emits; the black box is what an agent typically tries before giving up.
+// The first one is HivePay, a fictional vendor: its rule is in no model's
+// training data, which is the kind of failure Mayday exists for.
 
-export type VendorChoice = "auto" | "stripe" | "supabase" | "vercel" | "anthropic";
+export type VendorChoice = "auto" | "hivepay" | "stripe" | "supabase" | "vercel" | "anthropic";
 
 export const VENDOR_CHOICES: { value: VendorChoice; label: string }[] = [
   { value: "auto", label: "Auto-detect" },
+  { value: "hivepay", label: "HivePay (fictional)" },
   { value: "stripe", label: "Stripe" },
   { value: "supabase", label: "Supabase" },
   { value: "vercel", label: "Vercel" },
@@ -24,6 +27,18 @@ export type Scenario = {
 };
 
 export const SCENARIOS: Scenario[] = [
+  {
+    id: "hivepay-minor-units",
+    vendor: "hivepay",
+    label: "Undocumented minor-units rule",
+    surface: "payouts.create",
+    error: "HivePayError [HP_AMOUNT_MINOR_UNITS]: amount must be an integer number of minor units",
+    attempts: [
+      { step: 1, action: "Called hivepay.payouts.create({ amount: 12.5, currency: 'usd' }) as the published docs show", result: "HP_AMOUNT_MINOR_UNITS: amount must be an integer number of minor units" },
+      { step: 2, action: "Passed the amount as the string '12.50'", result: "Same error: the docs never say the amount is counted in minor units" },
+    ],
+    minutes_lost: 16,
+  },
   {
     id: "stripe-webhook-raw-body",
     vendor: "stripe",

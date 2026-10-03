@@ -3,6 +3,7 @@ import Link from "next/link";
 import clsx from "clsx";
 import { Empty } from "@/components/ui";
 import { CARD, NotConnected, PAGE, SectionHead, Track, VendorDot } from "@/components/tower/parts";
+import { getVerifiedVendorSlugs } from "@/components/tower/server";
 import type { Rating } from "@/lib/airworthiness";
 import { getRatings, getVendorStats } from "@/lib/data";
 import { minutesToHuman } from "@/lib/format";
@@ -17,20 +18,28 @@ const pct = (n: number) => Math.round(n * 100);
 export default async function TowersPage() {
   let vendors: VendorStats[];
   let ratings: Record<string, Rating>;
+  let verifiedSlugs: string[];
   try {
-    [vendors, ratings] = await Promise.all([getVendorStats(), getRatings()]);
+    [vendors, ratings, verifiedSlugs] = await Promise.all([getVendorStats(), getRatings(), getVerifiedVendorSlugs()]);
   } catch (e) {
     return <NotConnected message={e instanceof Error ? e.message : "Unknown error"} />;
   }
 
   // Ranked by airworthiness. Airspaces with no traffic have nothing to rate
   // and go last.
-  const rows = vendors
-    .map((v) => ({ v, r: ratings[v.slug] ?? null }))
+  const verifiedSet = new Set(verifiedSlugs);
+  const byRating = vendors
+    .map((v) => ({ v, r: ratings[v.slug] ?? null, verified: v.claimed && verifiedSet.has(v.slug) }))
     .sort(
       (a, b) =>
         (b.r?.score ?? -1) - (a.r?.score ?? -1) || b.v.maydays - a.v.maydays || a.v.name.localeCompare(b.v.name),
     );
+  // The rank is the airworthiness rank. Verified, claimed towers are listed
+  // first, then claimed ones, without changing anyone's rank.
+  const rows = byRating
+    .map((x, i) => ({ ...x, rank: i + 1 }))
+    .sort((a, b) => Number(b.verified) - Number(a.verified) || Number(b.v.claimed) - Number(a.v.claimed) || a.rank - b.rank);
+  const verifiedCount = rows.filter((x) => x.verified).length;
 
   const down = vendors.reduce((n, v) => n + v.maydays, 0);
   const claimed = vendors.filter((v) => v.claimed).length;
@@ -55,7 +64,7 @@ export default async function TowersPage() {
           aside={
             <span className="tabular font-mono">
               {vendors.length} {vendors.length === 1 ? "airspace" : "airspaces"} · {rated} rated · {down.toLocaleString("en")} agents
-              down · {claimed} claimed
+              down · {claimed} claimed · {verifiedCount} verified
             </span>
           }
         />
@@ -83,11 +92,11 @@ export default async function TowersPage() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map(({ v, r }, i) => {
+                {rows.map(({ v, r, verified, rank }) => {
                   const isRated = Boolean(r && r.score !== null);
                   return (
                     <tr key={v.slug} className="border-b border-ink/15 transition-colors last:border-b-0 hover:bg-ink/5">
-                      <td className="tabular py-5 pr-4 font-mono text-xs text-mute">{isRated ? String(i + 1).padStart(2, "0") : "—"}</td>
+                      <td className="tabular py-5 pr-4 font-mono text-xs text-mute">{isRated ? String(rank).padStart(2, "0") : "—"}</td>
                       <td className="px-4 py-5">
                         <Link
                           href={`/tower/${encodeURIComponent(v.slug)}`}
@@ -96,6 +105,18 @@ export default async function TowersPage() {
                           <VendorDot color={v.color} />
                           {v.name}
                         </Link>
+                        {verified ? (
+                          <span
+                            className="ml-3 inline-flex items-center rounded-full bg-ink px-2.5 py-0.5 align-middle font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-bg"
+                            title={
+                              v.slug === "hivepay"
+                                ? "Verified by Mayday. HivePay is Mayday's own fictional demo vendor."
+                                : "Verified by Mayday."
+                            }
+                          >
+                            Verified
+                          </span>
+                        ) : null}
                       </td>
                       <td className="px-4 py-5">
                         {isRated && r ? (
@@ -121,7 +142,10 @@ export default async function TowersPage() {
                       <td className="tabular px-4 py-5 text-right font-mono text-ink">{minutesToHuman(v.minutes_lost)}</td>
                       <td className="whitespace-nowrap px-4 py-5 font-mono text-xs">
                         {v.claimed ? (
-                          <span className="rounded-full bg-ink px-2.5 py-1 font-semibold text-bg">claimed</span>
+                          <span className="inline-flex items-center gap-2">
+                            <span className="rounded-full bg-ink px-2.5 py-1 font-semibold text-bg">claimed</span>
+                            <span className="text-mute">{verified ? "verified vendor" : "claim not verified"}</span>
+                          </span>
                         ) : (
                           <span className="text-mute">unclaimed</span>
                         )}
@@ -153,8 +177,10 @@ export default async function TowersPage() {
             Provisional: computed mostly from charted failure patterns, not measured traffic.
           </span>{" "}
           The score is 55% rescue rate, 30% official-fix coverage and 15% how cheap a crash is. It moves only when agents
-          stop going down or get rescued. Claiming a tower does not change it; pinning fixes that work does. A tower claim
-          is not yet verified, so a pinned fix is the claimant's word, not proof it came from the vendor.
+          stop going down or get rescued. Claiming a tower does not change it; pinning fixes that work does. Only a tower
+          marked Verified belongs to a vendor Mayday itself has verified; today that is HivePay, Mayday&apos;s own fictional
+          demo vendor. Every other claim is not verified, so a fix pinned there is the claimant&apos;s word, not proof it
+          came from the vendor.
         </p>
       </section>
     </div>

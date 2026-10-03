@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { supabaseAdmin } from "@/lib/supabase/server";
 
-// HTTP helpers and request schemas for the open /api/v1 routes. Nothing here
-// touches the database, so the schemas can be reused anywhere.
+// HTTP helpers and request schemas for the open /api/v1 routes. Only limit()
+// touches the database (the rate_limit function); everything else is pure.
 
 // The API is open for the hackathon: agents and the plugin call from anywhere.
 export const CORS_HEADERS: Record<string, string> = {
@@ -26,6 +27,40 @@ export function withCors(res: Response): Response {
   const headers = new Headers(res.headers);
   for (const [k, v] of Object.entries(CORS_HEADERS)) headers.set(k, v);
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
+
+// --- rate limiting -----------------------------------------------------------
+
+const RATE_WINDOW_SECONDS = 60;
+
+// Who is calling, for rate limiting only. Vercel sets x-forwarded-for; the
+// first address is the client. The value is used as an opaque key, never
+// trusted for anything else, and clipped so a forged header cannot bloat it.
+export function clientKey(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const ip = forwarded || request.headers.get("x-real-ip")?.trim() || "unknown";
+  return ip.slice(0, 64);
+}
+
+// Fixed-window rate limit per client and bucket, counted in Postgres
+// (rate_limit in migration 0007) so every server instance shares one count.
+// Returns null when the request may proceed, or the 429 to send back.
+// Fails open: if the limiter itself is broken the API keeps working.
+export async function limit(request: Request, bucket: string, max: number): Promise<Response | null> {
+  try {
+    const { data, error } = await supabaseAdmin().rpc("rate_limit", {
+      p_key: `${bucket}:${clientKey(request)}`,
+      p_max: max,
+      p_window_seconds: RATE_WINDOW_SECONDS,
+    });
+    if (error || data !== false) return null;
+  } catch {
+    return null;
+  }
+  return Response.json(
+    { error: "Rate limit reached. Try again in a minute." },
+    { status: 429, headers: { ...CORS_HEADERS, "Cache-Control": "no-store", "Retry-After": String(RATE_WINDOW_SECONDS) } },
+  );
 }
 
 export class HttpError extends Error {

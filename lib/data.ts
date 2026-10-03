@@ -12,6 +12,8 @@ import type {
   FeedMayday,
   FeedRescue,
   Flare,
+  Flight,
+  FlightStat,
   HiveSavings,
   Incident,
   MatchCandidate,
@@ -465,4 +467,34 @@ export async function explainMatch(input: { error: string; vendor?: string | nul
     score: num(c.score),
   }));
   return { signature, codes, vendor: detectVendor(clean, input.vendor), threshold: 0.55, candidates };
+}
+
+// --- hosted flights ---------------------------------------------------------
+
+export async function saveFlight(f: Omit<Flight, "id" | "created_at">): Promise<Flight> {
+  const { data, error } = await supabaseAdmin().from("flights").insert(f).select("*").single();
+  if (error) fail("saveFlight", error);
+  return { ...(data as Flight), seconds: Number((data as Flight).seconds) };
+}
+
+export async function getFlights(scenario: string, limit = 12): Promise<Flight[]> {
+  const { data, error } = await supabaseAdmin()
+    .from("flights")
+    .select("*")
+    .eq("scenario", scenario)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) fail("getFlights", error);
+  return ((data ?? []) as Flight[]).map((f) => ({ ...f, seconds: Number(f.seconds) }));
+}
+
+export async function getFlightStats(scenario: string): Promise<FlightStat[]> {
+  const { data, error } = await supabaseAdmin().from("flight_stats").select("*").eq("scenario", scenario);
+  if (error) fail("getFlightStats", error);
+  return ((data ?? []) as FlightStat[]).map((s) => ({
+    ...s,
+    avg_failed_attempts: Number(s.avg_failed_attempts),
+    avg_tool_calls: Number(s.avg_tool_calls),
+    avg_seconds: Number(s.avg_seconds),
+  }));
 }

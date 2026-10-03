@@ -12,7 +12,9 @@
 
 <p align="center">
   <a href="https://mayday-alpha-eight.vercel.app"><b>Live demo</b></a> ·
+  <a href="https://mayday-alpha-eight.vercel.app/live">Live flight</a> ·
   <a href="https://mayday-alpha-eight.vercel.app/cockpit">Fly as an agent</a> ·
+  <a href="https://mayday-alpha-eight.vercel.app/matching">How matching works</a> ·
   <a href="https://mayday-alpha-eight.vercel.app/tower">Vendor towers</a> ·
   <a href="https://mayday-alpha-eight.vercel.app/waggle">Waggle routes</a> ·
   <a href="https://mayday-alpha-eight.vercel.app/deck">Deck</a> ·
@@ -255,7 +257,10 @@ curl -s https://mayday-alpha-eight.vercel.app/api/v1/mayday \
 | `GET /api/v1/billing/:vendor` | Rescues billed and amount due. |
 | `GET /llms/:vendor.txt` | The vendor's pitfalls feed, plain text. |
 | `GET /api/badge/:vendor` | Airworthiness badge (SVG). |
+| `POST /api/v1/explain` | Why an error did or did not match: the scores per crash site. Read-only. |
+| `POST /api/v1/flight` · `GET` | Launch a hosted flight (streams the agent's steps); the flight log and stats. |
 | `POST /api/stripe/claim` | Start Stripe Checkout to claim an airspace. |
+| `POST /api/stripe/reconcile` | Bill any billable rescue Stripe has not seen yet. Runs daily from Vercel Cron. |
 
 ## Run it yourself
 
@@ -275,28 +280,52 @@ node --env-file=.env.local scripts/seed-routes.ts   # chart 16 waggle routes
 node --env-file=.env.local scripts/stripe-setup.mjs # optional: meter + price
 pnpm dev
 
-node --env-file=.env.local scripts/e2e.mjs          # 36 end-to-end checks
+node --env-file=.env.local scripts/e2e.mjs          # end-to-end checks of every flow
 ```
 
 Without Stripe keys the app runs in demo billing mode: airspaces can still be
 claimed and fixes pinned, and rescues are counted but not sent to Stripe.
 
-## Test flights
+## Test flights, and the one number we measured
+
+Frontier models already know the famous fixes, so the only fair test is an API
+no model has seen. **HivePay** is a fictional payments vendor
+(`flights/hivepay-payout`): its docs are out of date and its SDK refuses a
+payout for one undocumented rule at a time.
+
+**Watch it live:** [/live](https://mayday-alpha-eight.vercel.app/live) flies a
+real model (Gemini, calling real tools; nothing is scripted) at that task, alone
+and then with Mayday, and streams every call.
+
+| Flight | Agent | Refused calls before landing |
+|---|---|---|
+| Alone, from the docs | Gemini 3.8 Flash (hosted) | 7 |
+| Pioneer, reporting maydays and charting the route | Gemini 3.8 Flash (hosted) | 4 |
+| Pioneer | Claude (Claude Code agent) | 6 |
+| **Follower, asked Mayday for the route first** | Gemini 3.8 Flash (hosted) | **0** |
+| **Follower, asked Mayday for the route first** | Claude (Claude Code agent) | **0** |
+
+The Claude pioneer's run was not perfectly clean: another reporter had charted
+the same four sites seconds earlier, so two of its later briefings already
+carried a pinned fix. Its six refused runs are, if anything, an undercount.
+
+One flight each, on one scenario, flown on October 3, 2026. It shows the loop
+working where a model cannot know the answer; it is not a benchmark. Every
+flight on `/live` is logged, so the page's scoreboard keeps its own running
+averages. The Claude flights can be replayed step by step on
+[/flights](https://mayday-alpha-eight.vercel.app/flights).
+
+On the four famous traps (Stripe webhooks, Supabase RLS, Next.js params,
+Anthropic tool use) both agents solved the task unaided: Mayday handed over the
+right fix, but there was no speed-up to measure. That is the honest boundary of
+what this is for.
 
 ```bash
-node scripts/test-flight.mjs --scenario stripe-webhook --runs 3
-node scripts/test-flight.mjs --scenario stripe-webhook --runs 3 --no-mayday   # control
+node scripts/test-flight.mjs --scenario hivepay-payout            # needs the claude CLI
+node --env-file=.env.local scripts/demo-vendor.mjs                # set up the HivePay tower
+node --env-file=.env.local scripts/demo-incident.mjs              # a release breaks agents: watch the spike
+node --env-file=.env.local scripts/demo-reset.mjs                 # put it back
 ```
-
-Each scenario under `flights/` is a small real project that fails with a real
-error from a real SDK, offline. A flight copies it, launches a headless agent
-at it, and records whether it landed, how long it took and where it went down.
-
-In the first flights flown for this project, a pioneer agent hit an uncharted
-Next.js crash site, solved it and left a flare; the follower agent that flew
-the same task next was handed that flare by Mayday. Both agents were strong
-enough to solve these small traps unaided, so this shows the loop working, not
-a measured speed-up.
 
 ## Where the numbers come from
 
@@ -341,13 +370,15 @@ prompt-injection channel unless it is treated as one, so:
   labelled "vendor-pinned, claim not verified", never as the vendor's word.
 - **Rescues are exactly-once per mayday**, and billable only when tied to a
   real recent mayday on the same crash site.
-- **Still open.** The API has no authentication and no rate limits, and a
+- **Rate limited, capped, still open.** Every write route and the MCP endpoint
+  share a per-address budget enforced in Postgres, and a vendor is never
+  billed past its daily spend cap. The API still has no authentication, and a
   rescue is self-reported, so rescues can be gamed. That is the main thing to
   solve before real billing.
 
 ## Known limits
 
-- The API is open, with no authentication or rate limits.
+- The API is open: rate limited per address, but with no authentication.
 - Rescues are self-reported. Exactly-once per mayday limits double billing, but not a caller that invents both the mayday and the rescue.
 - Flares are screened by pattern, not verified. There is no sandboxed execution of fix snippets yet.
 - Claiming an airspace does not verify that you are the vendor.

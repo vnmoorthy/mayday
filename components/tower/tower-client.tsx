@@ -14,6 +14,7 @@ import { Ago } from "./ago";
 import { BillingPanel, useBilling } from "./billing-panel";
 import { ClaimPanel } from "./claim-panel";
 import { Incidents } from "./incidents";
+import { WildChip, isWild, pinnedLabel } from "./labels";
 import { CARD, Meter, Notice, PAGE, RateBar, SectionHead, VendorDot } from "./parts";
 import { SiteDrawer } from "./site-drawer";
 
@@ -56,6 +57,8 @@ export function TowerClient({
   const [official, setOfficial] = useState(() => new Set(officialSiteIds));
   const [sort, setSort] = useState<Sort>({ key: "down", dir: "desc" });
   const [selected, setSelected] = useState<string | null>(null);
+  // Show only the crash sites an agent reported first (not charted in advance).
+  const [wildOnly, setWildOnly] = useState(false);
   const [hot, setHot] = useState<Record<string, true>>({});
   const [live, setLive] = useState<Live>(() =>
     process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "connecting" : "off",
@@ -177,10 +180,17 @@ export function TowerClient({
 
   const sorted = useMemo(() => {
     const dir = sort.dir === "desc" ? -1 : 1;
-    return [...sites].sort(
+    return [...(wildOnly ? sites.filter(isWild) : sites)].sort(
       (a, b) => dir * (sortValue(a, sort.key) - sortValue(b, sort.key)) || b.maydays_count - a.maydays_count || a.title.localeCompare(b.title),
     );
-  }, [sites, sort]);
+  }, [sites, sort, wildOnly]);
+
+  const wildCount = useMemo(() => sites.filter(isWild).length, [sites]);
+  const pinnedSites = useMemo(
+    () => sites.filter((s) => official.has(s.id)).sort((a, b) => b.maydays_count - a.maydays_count || a.title.localeCompare(b.title)),
+    [sites, official],
+  );
+  const verified = vendor.claimed && vendor.verified === true;
 
   const selectedSite = selected ? (sites.find((s) => s.id === selected) ?? null) : null;
   const closeDrawer = useCallback(() => setSelected(null), []);
@@ -220,59 +230,11 @@ export function TowerClient({
   let n = 0;
   const idx = () => String(++n).padStart(2, "0");
 
-  return (
-    <div className={clsx(PAGE, "flex flex-col gap-14 py-10 sm:gap-20 sm:py-16")}>
-      <header className="flex flex-col gap-6">
-        <nav aria-label="Breadcrumb" className="label flex items-center gap-2">
-          <Link href="/tower" className="hover:text-ink">
-            Towers
-          </Link>
-          <span aria-hidden>/</span>
-          <span className="font-bold text-ink">{vendor.name}</span>
-        </nav>
-        <h1 className="break-words text-6xl font-extrabold! text-ink sm:text-8xl lg:text-9xl">{vendor.name}</h1>
-        <div className="label flex flex-wrap items-center gap-x-6 gap-y-2">
-          <span className="inline-flex items-center gap-2">
-            <VendorDot color={vendor.color} />
-            Tower
-          </span>
-          {vendor.claimed ? (
-            <span className="text-ink">
-              Claimed
-              {vendor.claimed_at ? (
-                <>
-                  {" "}
-                  <Ago iso={vendor.claimed_at} />
-                </>
-              ) : null}
-            </span>
-          ) : (
-            <span>Unclaimed airspace: nothing here was written by {vendor.name}.</span>
-          )}
-          <LiveStatus live={live} />
-        </div>
-      </header>
-
-      {notice ? (
-        <Notice
-          tone={notice.tone}
-          action={
-            <button
-              type="button"
-              onClick={dismissNotice}
-              aria-label="Dismiss"
-              className="rounded-full p-1 text-ink transition-colors hover:bg-ink hover:text-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink"
-            >
-              <X className="h-4 w-4" strokeWidth={1.5} aria-hidden />
-            </button>
-          }
-        >
-          {notice.text}
-        </Notice>
-      ) : null}
-
-      <Incidents index={idx()} slug={slug} onOpen={openIncident} />
-
+  // The sections below are rendered in a different order for claimed and
+  // unclaimed towers. They are plain functions, called in render order, so
+  // the section numbers follow the page.
+  const renderOverview = () => (
+    <>
       <section className="flex flex-col gap-6" aria-labelledby="airworthiness-heading">
         <SectionHead
           index={idx()}
@@ -372,7 +334,11 @@ export function TowerClient({
           />
         </div>
       </section>
+    </>
+  );
 
+  const renderClaim = () => (
+    <>
       {!vendor.claimed ? (
         <section className="flex flex-col gap-6" aria-label="Claim this airspace">
           <SectionHead index={idx()} title="Claim this airspace" />
@@ -385,9 +351,34 @@ export function TowerClient({
           />
         </section>
       ) : null}
+    </>
+  );
 
+  const renderSites = () => (
+    <>
       <section className="flex min-w-0 flex-col gap-6" aria-labelledby="sites-heading">
-        <SectionHead index={idx()} title="Crash sites" id="sites-heading" aside="Select a crash site to read its black box" />
+        <SectionHead
+          index={idx()}
+          title="Crash sites"
+          id="sites-heading"
+          aside={
+            <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-2">
+              <button
+                type="button"
+                aria-pressed={wildOnly}
+                onClick={() => setWildOnly((v) => !v)}
+                title="Crash sites an agent reported first. They were not charted in advance, so a model is unlikely to know them from training."
+                className={clsx(
+                  "tabular rounded-full border border-ink px-3 py-1 font-mono text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink",
+                  wildOnly ? "bg-ink text-bg" : "text-ink hover:bg-ink hover:text-bg",
+                )}
+              >
+                In the wild only · {wildCount}
+              </button>
+              <span>Select a crash site to read its black box</span>
+            </span>
+          }
+        />
         {sorted.length ? (
           <div className={clsx(CARD, "scroll-thin overflow-x-auto px-5 pb-2 pt-5 sm:px-6")}>
             <table className="w-full min-w-[960px] border-collapse text-sm">
@@ -429,6 +420,7 @@ export function TowerClient({
                         >
                           {s.title}
                         </button>
+                        {isWild(s) ? <WildChip firstSeen={s.first_seen} className="mt-1.5" /> : null}
                         {isHot ? (
                           <span className="mt-1.5 inline-flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-distress">
                             <span className="h-1.5 w-1.5 rounded-full bg-distress animate-flicker" aria-hidden />
@@ -466,12 +458,141 @@ export function TowerClient({
             </table>
           </div>
         ) : (
-          <Empty title="No crash sites charted in this airspace">
-            No agent has reported going down on {vendor.name} yet. Launch a test flight to find crash sites before agents in
-            the wild do.
+          wildOnly && sites.length ? (
+            <Empty title="No crash site here was first seen in the wild yet">
+              Every crash site in this airspace was charted in advance from a known failure pattern. A site an agent reports
+              first shows up here, marked with when it was first seen.
+            </Empty>
+          ) : (
+            <Empty title="No crash sites charted in this airspace">
+              No agent has reported going down on {vendor.name} yet. Launch a test flight to find crash sites before agents
+              in the wild do.
+            </Empty>
+          )
+        )}
+      </section>
+    </>
+  );
+
+  const renderPinned = () => (
+    <>
+      <section className="flex min-w-0 flex-col gap-6" aria-labelledby="pinned-heading">
+        <SectionHead
+          index={idx()}
+          title="Pinned fixes"
+          id="pinned-heading"
+          aside={`${pinnedSites.length} of ${sites.length} crash ${sites.length === 1 ? "site" : "sites"} covered`}
+        />
+        {pinnedSites.length ? (
+          <ul className={clsx(CARD, "flex flex-col px-5 sm:px-6")}>
+            {pinnedSites.map((s) => (
+              <li key={s.id} className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-ink/15 py-4 last:border-b-0">
+                <span className="min-w-0 flex-1 basis-64">
+                  <span className="block break-words text-[15px] font-semibold text-ink">{s.title}</span>
+                  <span className="label mt-1 block font-bold text-flare!">{pinnedLabel(vendor.name, verified)}</span>
+                </span>
+                <span className="tabular whitespace-nowrap font-mono text-xs text-mute">
+                  <span className="font-bold text-distress">{s.maydays_count.toLocaleString("en")}</span> down ·{" "}
+                  <span className="font-bold text-rescue">{s.rescues_count.toLocaleString("en")}</span> rescued
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelected(s.id)}
+                  className="whitespace-nowrap text-sm font-semibold text-ink underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                >
+                  Open the fix →
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <Empty title="No fix pinned yet">
+            Select a crash site above and pin a fix there. Agents that go down at that site are handed the pinned fix first.
           </Empty>
         )}
       </section>
+    </>
+  );
+
+  return (
+    <div className={clsx(PAGE, "flex flex-col gap-14 py-10 sm:gap-20 sm:py-16")}>
+      <header className="flex flex-col gap-6">
+        <nav aria-label="Breadcrumb" className="label flex items-center gap-2">
+          <Link href="/tower" className="hover:text-ink">
+            Towers
+          </Link>
+          <span aria-hidden>/</span>
+          <span className="font-bold text-ink">{vendor.name}</span>
+        </nav>
+        <h1 className="break-words text-6xl font-extrabold! text-ink sm:text-8xl lg:text-9xl">{vendor.name}</h1>
+        <div className="label flex flex-wrap items-center gap-x-6 gap-y-2">
+          <span className="inline-flex items-center gap-2">
+            <VendorDot color={vendor.color} />
+            Tower
+          </span>
+          {verified ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1 font-bold text-bg"
+              title="Mayday has verified this vendor. A paid claim alone does not earn this mark."
+            >
+              <Check className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />
+              Verified vendor{slug === "hivepay" ? " · Mayday's own demo airspace" : ""}
+            </span>
+          ) : null}
+          {vendor.claimed ? (
+            <span className="text-ink">
+              Claimed
+              {vendor.claimed_at ? (
+                <>
+                  {" "}
+                  <Ago iso={vendor.claimed_at} />
+                </>
+              ) : null}
+              {verified ? "" : " · claim not verified"}
+            </span>
+          ) : (
+            <span>Unclaimed airspace: nothing here was written by {vendor.name}.</span>
+          )}
+          <LiveStatus live={live} />
+        </div>
+      </header>
+
+      {notice ? (
+        <Notice
+          tone={notice.tone}
+          action={
+            <button
+              type="button"
+              onClick={dismissNotice}
+              aria-label="Dismiss"
+              className="rounded-full p-1 text-ink transition-colors hover:bg-ink hover:text-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink"
+            >
+              <X className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+            </button>
+          }
+        >
+          {notice.text}
+        </Notice>
+      ) : null}
+
+      <Incidents index={idx()} slug={slug} onOpen={openIncident} />
+
+      {/* A claimed tower is a working surface: crash sites and pinned fixes come
+          straight after the incidents. An unclaimed one leads with the rating
+          and the invitation to claim. */}
+      {vendor.claimed ? (
+        <>
+          {renderSites()}
+          {renderPinned()}
+          {renderOverview()}
+        </>
+      ) : (
+        <>
+          {renderOverview()}
+          {renderClaim()}
+          {renderSites()}
+        </>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className={clsx(CARD, "flex min-w-0 flex-col gap-6 p-6 sm:p-8")} aria-label="Billing">

@@ -1,2 +1,96 @@
-/*! @hivepay/node 4.2.1 (sandbox bundle 7f3c9e1) | (c) HivePay, Inc. | generated file, do not edit */
-import{createHmac as H,randomBytes as R}from"node:crypto";const V="4.2.1",A="2026-03-01",D=s=>Buffer.from(s,"base64").toString("utf8"),G=(o,p)=>p.split(".").reduce((a,k)=>a==null?void 0:a[k],o),S=v=>typeof v+":"+(v===void 0?"":v!==null&&typeof v=="object"?JSON.stringify(v):String(v)),B=(n,a=250,c=8e3)=>Math.min(c,a*2**n)+Math.floor(Math.random()*a),U=k=>({authorization:"Bearer "+k,"hivepay-version":A,"user-agent":"hivepay-node/"+V+" node/"+process.versions.node,"content-type":"application/json"}),X={usd:2,eur:2,gbp:2,cad:2,aud:2,jpy:0,krw:0},N=new Map([["SFBfQVVUSF9NSVNTSU5H","bm8gQVBJIGtleSBwcm92aWRlZA=="],["SFBfQVVUSF9JTlZBTElE","dGhlIEFQSSBrZXkgcHJvdmlkZWQgaXMgbm90IHZhbGlk"],["SFBfUkFURV9MSU1JVEVE","dG9vIG1hbnkgcmVxdWVzdHMsIHNsb3cgZG93bg=="],["SFBfQkFMQU5DRV9JTlNVRkZJQ0lFTlQ=","YXZhaWxhYmxlIGJhbGFuY2UgaXMgdG9vIGxvdyBmb3IgdGhpcyBwYXlvdXQ="],["SFBfTk9UX0ZPVU5E","bm8gc3VjaCByZXNvdXJjZQ=="]].map(([a,b])=>[D(a),D(b)])),W=[["SFBfQU1PVU5UX01JTk9SX1VOSVRT","YW1vdW50IG11c3QgYmUgYW4gaW50ZWdlciBudW1iZXIgb2YgbWlub3IgdW5pdHM=","cC5hbW91bnQ=","Xm51bWJlcjpbMS05XVswLTldezAsMTF9JA==",400],["SFBfSURFTVBPVEVOQ1lfRk9STUFU","aWRlbXBvdGVuY3kga2V5IGlzIG1pc3Npbmcgb3IgbWFsZm9ybWVk","by5pZGVtcG90ZW5jeUtleQ==","XnN0cmluZzpocF9bMC05YS1mXXsyNH0k",400],["SFBfREVTVElOQVRJT05fU0hBUEU=","ZGVzdGluYXRpb24gaXMgbm90IGEgdmFsaWQgZGVzdGluYXRpb24=","cC5kZXN0aW5hdGlvbg==","Xm9iamVjdDpcew==",422],["SFBfREVTVElOQVRJT05fU0hBUEU=","ZGVzdGluYXRpb24gaXMgbm90IGEgdmFsaWQgZGVzdGluYXRpb24=","cC5kZXN0aW5hdGlvbi50eXBl","XnN0cmluZzpiYW5rX2FjY291bnQk",422],["SFBfREVTVElOQVRJT05fU0hBUEU=","ZGVzdGluYXRpb24gaXMgbm90IGEgdmFsaWQgZGVzdGluYXRpb24=","cC5kZXN0aW5hdGlvbi50b2tlbg==","XnN0cmluZzpcUysk",422],["SFBfUkVGRVJFTkNFX0xFTkdUSA==","cmVmZXJlbmNlIHJlamVjdGVkIGJ5IHRoZSByZWNlaXZpbmcgYmFuaw==","cC5tZXRhZGF0YS5yZWZlcmVuY2U=","XnN0cmluZzouezEsMTh9JA==",422]],L=new Map,I=new Map;class HivePayError extends Error{constructor(c,m,s){super("HivePayError ["+c+"]: "+(m??N.get(c)??"request failed"));this.name="HivePayError";this.code=c;this.statusCode=s??400;this.requestId="req_"+R(8).toString("hex");const t=String(this.stack||""),i=t.indexOf("\n");this.stack=this.message+(i<0?"":t.slice(i))}}const Y=(c,t)=>{for(const[a,b,e,f,g]of t)if(!new RegExp(D(f)).test(S(G(c,D(e)))))throw new HivePayError(D(a),D(b),g)},Z=(k,o)=>H("sha256",k).update(JSON.stringify(o)).digest("hex");export function createClient(e={}){const K=e&&e.apiKey;if(typeof K!="string"||!K)throw new HivePayError("HP_AUTH_MISSING",void 0,401);const h=U(K);return{version:V,apiVersion:A,payouts:{async create(p,o){const c={p:p??{},o:o??{},h};Y(c,W);const k=c.o.idempotencyKey,s=Z(K,c.p);if(I.has(k))return{...L.get(I.get(k))};const r={id:"po_"+Z(K,[k,s]).slice(0,16),status:"paid",amount:c.p.amount,currency:c.p.currency};L.set(r.id,r);I.set(k,r.id);return{...r}},async retrieve(d){if(!L.has(d))throw new HivePayError("HP_NOT_FOUND",void 0,404);return{...L.get(d)}}}}}export{HivePayError,V as VERSION};export default{createClient,HivePayError,VERSION:V};
+// HivePay Node SDK 3.x (sandbox build). HivePay is a fictional vendor: it
+// exists so that a test flight can run on an API no model was trained on.
+//
+// payouts.create() checks its input the way a real payments API does: one
+// rule at a time, in order, and each refusal only tells you about the first
+// thing that is wrong. The published docs (docs.md) predate four of these
+// rules, so code written from the docs is refused four times over.
+
+import { randomBytes } from "node:crypto";
+
+export class HivePayError extends Error {
+  constructor(code, message, param) {
+    super(`HivePayError [${code}]: ${message}`);
+    this.name = "HivePayError";
+    this.code = code;
+    this.param = param;
+    this.statusCode = 400;
+    this.requestId = `req_${randomBytes(8).toString("hex")}`;
+  }
+}
+
+const refuse = (code, message, param) => {
+  throw new HivePayError(code, message, param);
+};
+
+// The rules, in the order the API applies them.
+function validate(params = {}, options = {}) {
+  const { amount, currency, destination, metadata } = params;
+
+  // 1. Amounts are integers in minor units since 3.0 (the docs still show 49.99).
+  if (typeof amount !== "number" || !Number.isInteger(amount)) {
+    refuse("HP_AMOUNT_MINOR_UNITS", "amount must be an integer number of minor units", "amount");
+  }
+  if (typeof currency !== "string" || !/^[a-z]{3}$/.test(currency)) {
+    refuse("HP_CURRENCY", "currency must be a lowercase three-letter ISO code", "currency");
+  }
+
+  // 2. Idempotency keys have a fixed shape since 3.1.
+  const key = options.idempotencyKey;
+  if (typeof key !== "string" || key.length === 0) {
+    refuse("HP_IDEMPOTENCY_FORMAT", "idempotency key is required", "idempotencyKey");
+  }
+  if (!key.startsWith("hp_")) {
+    refuse("HP_IDEMPOTENCY_FORMAT", "idempotency key is malformed: it must start with hp_", "idempotencyKey");
+  }
+  if (!/^hp_[0-9a-f]{24}$/.test(key)) {
+    refuse(
+      "HP_IDEMPOTENCY_FORMAT",
+      "idempotency key is malformed: expected 24 lowercase hexadecimal characters after hp_",
+      "idempotencyKey",
+    );
+  }
+
+  // 3. Destinations are typed objects since 3.2 (the docs still pass the bare token).
+  if (typeof destination !== "object" || destination === null) {
+    refuse("HP_DESTINATION_SHAPE", "destination is not a valid destination: expected an object", "destination");
+  }
+  if (destination.type !== "bank_account") {
+    refuse("HP_DESTINATION_SHAPE", 'destination.type is required and must be "bank_account"', "destination.type");
+  }
+  if (typeof destination.token !== "string" || !destination.token.startsWith("ba_tok_")) {
+    refuse("HP_DESTINATION_SHAPE", "destination.token is required (a ba_tok_ bank account token)", "destination.token");
+  }
+
+  // 4. The receiving bank prints the reference on a statement line.
+  const reference = metadata?.reference;
+  if (typeof reference !== "string" || reference.length === 0) {
+    refuse("HP_REFERENCE_LENGTH", "metadata.reference is required by the receiving bank", "metadata.reference");
+  }
+  if (reference.length > 18) {
+    refuse(
+      "HP_REFERENCE_LENGTH",
+      `reference rejected by the receiving bank: ${reference.length} characters, the statement line holds 18`,
+      "metadata.reference",
+    );
+  }
+}
+
+export function createClient({ apiKey } = {}) {
+  if (typeof apiKey !== "string" || !apiKey.startsWith("hp_")) {
+    throw new HivePayError("HP_API_KEY", "a HivePay API key is required (hp_test_ or hp_live_)", "apiKey");
+  }
+  return {
+    payouts: {
+      async create(params, options) {
+        validate(params, options);
+        return {
+          id: `po_${randomBytes(8).toString("hex")}`,
+          status: "paid",
+          amount: params.amount,
+          currency: params.currency,
+        };
+      },
+    },
+  };
+}

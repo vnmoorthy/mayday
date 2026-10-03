@@ -10,7 +10,7 @@ export type Vendor = {
   claimed: boolean;
   claimed_at: string | null;
   // Set only by Mayday after the claimant proves control of the vendor's domain.
-  verified: boolean;
+  verified?: boolean;
   created_at: string;
 };
 
@@ -42,7 +42,7 @@ export type Site = {
   first_seen: string;
   last_seen: string;
   // True when the site came from the charted (seed) set of well-known failures.
-  charted: boolean;
+  charted?: boolean;
 };
 
 // One step of the black-box replay: what the agent tried and what happened.
@@ -120,8 +120,13 @@ export type Billing = {
   billable_rescues: number;
   billed_rescues: number;
   amount_due_cents: number;
+  // Stripe ids are never sent to the browser; these say whether they exist.
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
+  has_customer?: boolean;
+  has_subscription?: boolean;
+  daily_cap_cents?: number;
+  billed_today_cents?: number;
 };
 
 // A crash site where agents are going down faster than its own baseline.
@@ -194,4 +199,39 @@ export type MatchExplanation = {
   vendor: string; // the vendor guess
   threshold: number;
   candidates: MatchCandidate[];
+};
+
+// A hosted test flight: a real model flying a scenario, with or without Mayday.
+export type FlightMode = "solo" | "pioneer" | "follower";
+
+export type FlightEvent = {
+  t: number; // milliseconds since take-off
+  kind: "start" | "think" | "tool" | "result" | "done" | "error";
+  name?: string; // tool name
+  text: string; // what to show
+  ok?: boolean; // for results: did the call succeed
+};
+
+export type Flight = {
+  id: string;
+  scenario: string;
+  mode: FlightMode;
+  agent: string;
+  model: string;
+  landed: boolean;
+  failed_attempts: number;
+  tool_calls: number;
+  seconds: number;
+  events: FlightEvent[];
+  created_at: string;
+};
+
+export type FlightStat = {
+  scenario: string;
+  mode: FlightMode;
+  flights: number;
+  landed: number;
+  avg_failed_attempts: number;
+  avg_tool_calls: number;
+  avg_seconds: number;
 };

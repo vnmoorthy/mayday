@@ -1,7 +1,7 @@
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
 import { approach, chartRoute, findRoutes, getSiteDetail, getVendorStats, leaveFlare, reportLanding, reportMayday } from "@/lib/data";
-import { cleanMessage, LIMITS, preflight, withCors } from "@/lib/http";
+import { cleanMessage, LIMITS, limit, preflight, withCors } from "@/lib/http";
 import {
   formatBriefing,
   formatFlareLeft,
@@ -287,5 +287,12 @@ const handler = createMcpHandler(
 
 const mcp = async (req: Request) => withCors(await handler(req));
 
-export { mcp as GET, mcp as POST, mcp as DELETE };
+// MCP tool calls write to the same tables as the HTTP API, so they share a
+// per-address budget instead of bypassing the limiter.
+async function limited(request: Request): Promise<Response> {
+  const blocked = await limit(request, "mcp", 600);
+  return blocked ?? mcp(request);
+}
+
+export { mcp as GET, limited as POST, mcp as DELETE };
 export const OPTIONS = preflight;

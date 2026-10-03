@@ -11,6 +11,11 @@ import { mergeIncident, onIncident } from "@/components/tower/incident-feed";
 import type { Incident, Mayday, Rescue, Site, VendorStats } from "@/lib/types";
 import { BEE_NAME, JOIN_URL, JOIN_URL_SHORT } from "./presets";
 
+// The join address split where it reads naturally, for the two-line display.
+const JOIN_SPLIT = JOIN_URL_SHORT.indexOf(".");
+const JOIN_HOST_HEAD = JOIN_SPLIT > 0 ? JOIN_URL_SHORT.slice(0, JOIN_SPLIT) : JOIN_URL_SHORT;
+const JOIN_HOST_TAIL = JOIN_SPLIT > 0 ? JOIN_URL_SHORT.slice(JOIN_SPLIT) : "";
+
 // Audience mode, projector side. The left two thirds are the live hive map
 // (the same component the home page uses); the right third counts what the
 // room has done since this page was opened, lists the last ten events, raises
@@ -338,12 +343,35 @@ export function Stage() {
     [sites],
   );
 
-  const rate = down > 0 ? `${Math.min(100, Math.round((rescued / down) * 100))}%` : "–";
+  // All three counters read zero until the room does something.
+  const rate = `${down > 0 ? Math.min(100, Math.round((rescued / down) * 100)) : 0}%`;
   const spike = useMemo(() => [...incidents].sort((a, b) => b.recent - a.recent)[0] ?? null, [incidents]);
   const spikeTitle = spike ? (trusted.has(spike.site_id) ? spike.title : "a new crash site") : "";
 
   return (
-    <div className="grid h-full w-full grid-cols-[minmax(0,2fr)_minmax(22rem,1fr)] gap-[1.6vw] p-[1.6vw]">
+    <div className="flex h-full w-full flex-col gap-[1.4vh] p-[1.6vw]">
+      {/* A spike takes the full width of the room, in red. */}
+      {spike ? (
+        <div
+          className="flex shrink-0 items-center gap-[1.4vw] rounded-2xl border-2 border-distress bg-distress px-[1.6vw] py-[1.6vh] text-comb shadow-[0_0_0_0.5vh_rgba(184,15,38,0.25)]"
+          role="alert"
+          aria-live="assertive"
+        >
+          <span className="h-[3vh] w-[3vh] shrink-0 animate-flicker rounded-full bg-comb" aria-hidden />
+          <p className="min-w-0 text-[clamp(1.5rem,4.6vh,3.75rem)] font-extrabold leading-[1.02] tracking-[-0.03em]">
+            <span className="animate-flicker">SPIKE:</span> {spike.recent} agents down in the last {incidentWindow} min at{" "}
+            {spikeTitle}
+            {incidents.length > 1 ? <span className="font-semibold opacity-80"> · +{incidents.length - 1} more</span> : null}
+          </p>
+          <span className="ml-auto hidden shrink-0 text-right font-mono text-[clamp(0.7rem,1.5vh,1.05rem)] uppercase leading-snug tracking-[0.14em] text-comb/85 lg:block">
+            detected by a
+            <br />
+            database trigger
+          </span>
+        </div>
+      ) : null}
+
+      <div className="grid min-h-0 w-full flex-1 grid-cols-[minmax(0,2fr)_minmax(22rem,1fr)] gap-[1.6vw]">
       {/* Left two thirds: the hive, live. */}
       <section className="flex min-h-0 min-w-0 flex-col gap-[1.4vh]">
         <header className="flex items-end justify-between gap-6">
@@ -395,36 +423,29 @@ export function Stage() {
           </div>
         )}
 
-        <footer className="tabular flex items-center justify-between gap-6 font-mono text-[clamp(0.65rem,1.3vh,0.9rem)] uppercase tracking-[0.14em] text-mute">
-          <span className="min-w-0 truncate">
-            All time: {totals.maydays.toLocaleString("en-US")} maydays · {totals.rescues.toLocaleString("en-US")} rescues ·{" "}
-            {sites.length} crash sites
-          </span>
-          <span className="shrink-0 whitespace-nowrap">f: fullscreen</span>
+        <footer className="flex flex-col gap-[0.5vh]">
+          <div className="tabular flex items-center justify-between gap-6 font-mono text-[clamp(0.65rem,1.3vh,0.9rem)] uppercase tracking-[0.14em] text-mute">
+            <span className="min-w-0 truncate">
+              All time: {totals.maydays.toLocaleString("en-US")} maydays · {totals.rescues.toLocaleString("en-US")} rescues ·{" "}
+              {sites.length} crash sites · counts mostly charted
+            </span>
+            <span className="shrink-0 whitespace-nowrap">f: fullscreen</span>
+          </div>
+          <p className="truncate text-[clamp(0.75rem,1.6vh,1.05rem)] font-semibold leading-tight text-ink">
+            Every tap is a real write to Postgres. Spikes are detected by a database trigger.
+          </p>
         </footer>
       </section>
 
       {/* Right third: what this room has done since the page opened. */}
       <aside className="flex min-h-0 min-w-0 flex-col gap-[1.6vh]">
-        <div
-          className={clsx(
-            "rounded-2xl border px-[1.1vw] py-[1.3vh]",
-            spike ? "border-distress bg-distress text-comb" : "border-ink/15 bg-panel text-mute",
-          )}
-          role="status"
-          aria-live="polite"
-        >
-          {spike ? (
-            <p className="text-[clamp(1rem,2.5vh,1.75rem)] font-extrabold leading-tight tracking-[-0.02em]">
-              <span className="animate-flicker">SPIKE:</span> {spike.recent} agents down in the last {incidentWindow} min at {spikeTitle}
-              {incidents.length > 1 ? <span className="font-semibold opacity-80"> · +{incidents.length - 1} more</span> : null}
-            </p>
-          ) : (
+        {spike ? null : (
+          <div className="rounded-2xl border border-ink/15 bg-panel px-[1.1vw] py-[1.3vh] text-mute" role="status" aria-live="polite">
             <p className="text-[clamp(0.85rem,1.9vh,1.25rem)] font-semibold leading-tight">
               No spike. Every crash site is at its own baseline.
             </p>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="rounded-2xl border border-ink/15 bg-panel px-[1.1vw] py-[1.6vh]">
           <div className="flex items-end justify-between gap-[1vw]">
@@ -475,7 +496,7 @@ export function Stage() {
               alt={`QR code for ${JOIN_URL}`}
               width={410}
               height={410}
-              className="h-[clamp(8rem,25vh,18rem)] w-auto shrink-0 rounded-xl border border-ink/20"
+              className="h-[clamp(9rem,27vh,20rem)] w-auto shrink-0 rounded-xl border-2 border-ink bg-white"
             />
             <p className="text-[clamp(1.5rem,4.6vh,3.5rem)] font-extrabold leading-[0.95] tracking-[-0.04em] text-ink">
               Scan.
@@ -483,11 +504,17 @@ export function Stage() {
               Become a bee.
             </p>
           </div>
-          <p className="mt-[1.1vh] whitespace-nowrap font-mono text-[clamp(0.8rem,1.42vw,1.9rem)] font-semibold tracking-[-0.02em] text-ink">
-            {JOIN_URL_SHORT}
+          {/* Two lines, so the address is twice the size one line would allow. */}
+          <p
+            className="mt-[1.2vh] font-mono text-[clamp(1.15rem,2.4vw,3.4rem)] font-extrabold leading-[1.05] tracking-[-0.03em] text-ink"
+            aria-label={JOIN_URL_SHORT}
+          >
+            <span className="block whitespace-nowrap">{JOIN_HOST_HEAD}</span>
+            <span className="block whitespace-nowrap">{JOIN_HOST_TAIL}</span>
           </p>
         </div>
       </aside>
+      </div>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import type { Flare, Site, SiteDetail, Vendor } from "@/lib/types";
 import { api, errorMessage } from "./api";
 import { ClaimPanel } from "./claim-panel";
 import { FlareCard } from "./flare-card";
+import { Provenance } from "./labels";
 import { FlareForm } from "./flare-form";
 import { CodeBlock, RateBar, Replay, SectionHead } from "./parts";
 
@@ -108,6 +109,9 @@ export function SiteDrawer({
             </span>
             <h2 className="break-words text-3xl font-extrabold! text-ink sm:text-4xl">{site.title}</h2>
             <span className="break-all font-mono text-xs text-mute">{site.surface}</span>
+            <span>
+              <Provenance site={site} />
+            </span>
           </div>
           <button
             ref={closeRef}
@@ -168,7 +172,7 @@ export function SiteDrawer({
                 {detail.flares.length ? (
                   <div className="flex flex-col gap-4">
                     {detail.flares.map((f) => (
-                      <FlareCard key={f.id} flare={f} vendorName={vendor.name} />
+                      <FlareCard key={f.id} flare={f} vendorName={vendor.name} verified={vendor.verified === true} />
                     ))}
                   </div>
                 ) : (

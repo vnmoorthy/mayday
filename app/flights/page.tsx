@@ -8,6 +8,8 @@ import { Badge, Bee, Stat } from "@/components/ui";
 import { CARD, CAP, FOCUS, H2, HEADLINE, INLINE_CODE } from "@/components/cockpit/theme";
 import { CommandBlock } from "@/components/flights/command-block";
 import { getFlightScenarios } from "@/components/flights/scenarios";
+import { loadReplay } from "@/components/flights/replay-data";
+import { ReplaySection } from "@/components/flights/replay-section";
 
 // Reads scenarios from disk and maydays from Postgres on every request.
 export const dynamic = "force-dynamic";
@@ -41,7 +43,8 @@ function SectionHead({ id, index, title, children }: { id: string; index: string
 }
 
 export default async function FlightsPage() {
-  const { scenarios, fromDisk } = await getFlightScenarios();
+  // loadReplay never throws: a database failure comes back as replay.error.
+  const [{ scenarios, fromDisk }, replay] = await Promise.all([getFlightScenarios(), loadReplay()]);
   const first = scenarios[0]?.name ?? "stripe-webhook";
 
   // Test-flight maydays are the ones logged with source "harvest".
@@ -73,6 +76,8 @@ export default async function FlightsPage() {
           </p>
         </div>
       </header>
+
+      <ReplaySection replay={replay} />
 
       <section
         className={clsx(CARD, "grid grid-cols-2 gap-x-6 gap-y-10 p-6 sm:p-8 lg:grid-cols-4 lg:p-10")}

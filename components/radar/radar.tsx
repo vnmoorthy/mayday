@@ -302,6 +302,8 @@ export function Radar({
     [ratings],
   );
   const vendorNames = useMemo(() => new Map(vendors.map((v) => [v.slug, v.name])), [vendors]);
+  // Crash sites an agent reported first: not in the charted set.
+  const wildCount = useMemo(() => sites.filter((s) => s.charted === false).length, [sites]);
 
   const toggleVendor = useCallback((slug: string) => setPinnedVendor((cur) => (cur === slug ? null : slug)), []);
   const closeSheet = useCallback(() => setOpenSiteId(null), []);
@@ -376,10 +378,18 @@ export function Radar({
         </div>
       </div>
       <div className="border-t border-line">
-        <p className={clsx(WRAP, "py-3 text-xs leading-relaxed text-mute")}>
-          Totals count every crash site on the hive map, including charted (seed) sites and test flights. The feed marks
-          the source of each entry.
-        </p>
+        <div className={clsx(WRAP, "flex flex-col gap-1.5 py-4")}>
+          <p className="max-w-3xl text-sm font-semibold leading-relaxed text-ink sm:text-base">
+            Charted sites are failures a model already knows. The cells outlined in black were first reported by an agent.
+          </p>
+          <p className="text-xs leading-relaxed text-mute">
+            Totals count every crash site on the hive map, including charted (seed) sites and test flights
+            {wildCount > 0
+              ? `; ${wildCount.toLocaleString("en-US")} of ${sites.length.toLocaleString("en-US")} ${wildCount === 1 ? "site was" : "sites were"} first seen in the wild`
+              : ""}
+            . The feed marks the source of each entry.
+          </p>
+        </div>
       </div>
 
       {/* bg-bg is painted here on purpose: the bee photograph is multiplied onto it, which is
@@ -395,7 +405,11 @@ export function Radar({
                 </h2>
                 <p className="max-w-xl text-sm leading-relaxed text-mute sm:text-base">
                   When an agent goes down, its cell fires and the pulse ripples through the six cells around it: the
-                  stop signal, spreading. A rescue ripples the same way, and caps the cell in wax.
+                  stop signal, spreading. A rescue ripples the same way, and caps the cell in wax.{" "}
+                  <span className="font-semibold text-ink">
+                    The cells outlined in black are the ones that matter: an agent reported them first, so a model is
+                    unlikely to know them from training.
+                  </span>
                 </p>
               </div>
               <span className="hidden shrink-0 rotate-[24deg] mix-blend-multiply sm:block" aria-hidden>
@@ -462,6 +476,12 @@ export function Radar({
             <span className="label flex items-center gap-2.5">
               <span className="hex h-4 w-3.5 outline-1 outline-ink/20" style={{ background: SWATCH.cap }} aria-hidden />
               Capped in wax: rescued
+            </span>
+            <span className="label flex items-center gap-2.5">
+              <span className="hex grid h-[18px] w-4 shrink-0 place-items-center bg-ink" aria-hidden>
+                <span className="hex block h-3 w-[10.5px]" style={{ background: SWATCH.honey }} />
+              </span>
+              Outlined: first seen in the wild, not charted
             </span>
             <span className="label">Select a cell for the crash site</span>
           </div>

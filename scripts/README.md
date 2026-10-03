@@ -175,3 +175,27 @@ exit code is 0 only when every flight landed. If the agent never took off
 
 A scenario is found only if `flights/<name>/.orig/TASK.md` exists.
 [CONTRIBUTING.md](../CONTRIBUTING.md) explains how to add one.
+
+## `demo-vendor.mjs`, `demo-incident.mjs`, `demo-reset.mjs`: the vendor-side demo
+
+The vendor-side demo runs on Mayday's own fictional vendor, **HivePay** (the
+`flights/hivepay-payout` scenario), so nothing is ever pinned in a real
+company's name. These scripts only touch the `hivepay` airspace.
+
+```bash
+node --env-file=.env.local scripts/demo-vendor.mjs                 # set up the airspace (safe to re-run)
+node --env-file=.env.local scripts/demo-incident.mjs --count 8     # a release breaks agents: the spike
+node --env-file=.env.local scripts/demo-reset.mjs                  # remove the incident, show it again
+```
+
+All three take the server from `--url`, then `MAYDAY_URL`, then
+`http://localhost:3000`.
+
+| Script | What it does | Needs |
+|---|---|---|
+| `demo-vendor.mjs` | Upserts the HivePay vendor as `verified` (it is Mayday's own vendor, the one verified vendor). Flies the scenario SDK offline to get its four real refusals (`HP_AMOUNT_MINOR_UNITS`, `HP_IDEMPOTENCY_FORMAT`, `HP_DESTINATION_SHAPE`, `HP_REFERENCE_LENGTH`) and reports a `harvest` mayday for each crash site that is missing. Claims the airspace (demo mode without Stripe keys; with Stripe live it prints the Checkout URL and claims through `claim_vendor`). Then, for every crash site with no vendor-pinned fix, asks `POST /api/v1/draft-fix` for a draft, reviews it against the SDK's real requirement, and pins it; a draft that fails the review, or no model access, pins the hand-written fix instead. | Supabase URL and service role key |
+| `demo-incident.mjs` | Simulates what no model was trained on: HivePay v2.4.0, "released 10 minutes ago", renames `destination.token`. Reports `--count` (default 8) `harvest` maydays, `--delay` ms apart (default 400), from differently named agents, then reads `GET /api/v1/incidents?vendor=hivepay` and prints whether the spike was detected, with `recent` and `ratio`. It checks with `/api/v1/approach` first and stops before writing if the error would land on any other crash site. | Nothing but the server |
+| `demo-reset.mjs` | Deletes the HivePay crash site whose sample error contains `HP_SCHEMA_V24`, with its maydays, flares and rescues, and prints what it removed. `--dry-run` only prints. Nothing else is deleted. | Supabase URL and service role key |
+
+The maydays these scripts report carry `source = 'harvest'` and no minutes
+lost: they are scripted demo traffic, not measured agent time.

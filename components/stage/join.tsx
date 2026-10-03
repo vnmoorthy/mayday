@@ -80,6 +80,8 @@ const noBee = () => null;
 // --- the API ----------------------------------------------------------------
 
 const TIMEOUT_MS = 15_000;
+const RATE_LIMITED = "Rate limit reached, try again in a minute.";
+const DUPLICATE_RESCUE = "Already confirmed: a mayday can only be rescued, and billed, once.";
 
 async function post<T>(path: string, body: unknown): Promise<T> {
   const ctl = new AbortController();
@@ -97,6 +99,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     } catch {
       json = null;
     }
+    // A room full of phones can trip the limiter: say so plainly.
+    if (res.status === 429) throw new Error(RATE_LIMITED);
     if (!res.ok || !json || typeof json !== "object") {
       const said = json && typeof json === "object" && "error" in json ? String((json as { error: unknown }).error) : "";
       throw new Error(said || `The hive answered ${res.status}.`);
@@ -125,7 +129,7 @@ type Phase =
   | { at: "pick" }
   | { at: "flying"; preset: Preset }
   | { at: "briefed"; preset: Preset; briefing: Briefing; flare: Flare | null; busy: boolean; error: string | null }
-  | { at: "rescued"; preset: Preset }
+  | { at: "rescued"; preset: Preset; duplicate: boolean }
   | { at: "failed"; preset: Preset; error: string };
 
 const BIG_BUTTON =
@@ -168,17 +172,20 @@ export function Join() {
     inFlight.current = true;
     setPhase({ ...phase, busy: true, error: null });
     try {
-      await post<unknown>("/api/v1/rescue", {
+      const done = await post<{ duplicate?: boolean }>("/api/v1/rescue", {
         site_id: briefing.site?.id,
         flare_id: flare?.id,
         mayday_id: briefing.mayday_id ?? null,
         agent: bee.name,
         minutes_saved: 3,
       });
-      bump("rescued");
-      setPhase({ at: "rescued", preset });
+      // A repeat confirmation changed nothing in the database, so it is not counted here either.
+      const duplicate = done.duplicate === true;
+      if (!duplicate) bump("rescued");
+      setPhase({ at: "rescued", preset, duplicate });
     } catch (e) {
-      setPhase({ ...phase, busy: false, error: e instanceof Error ? e.message : "The rescue was not recorded." });
+      const said = e instanceof Error ? e.message : "The rescue was not recorded.";
+      setPhase({ ...phase, busy: false, error: said === RATE_LIMITED ? said : `${said} Tap again.` });
     } finally {
       inFlight.current = false;
     }
@@ -210,27 +217,52 @@ export function Join() {
 
       {phase.at === "pick" || phase.at === "flying" ? (
         <section className="flex flex-col gap-3" aria-label="Pick a flight">
-          {PRESETS.map((p) => {
+          {PRESETS.map((p, i) => {
             const flying = phase.at === "flying" && phase.preset === p;
             return (
-              <button
-                key={p.scenario.id}
-                type="button"
-                disabled={!bee || phase.at === "flying"}
-                onClick={() => void fly(p)}
-                className={clsx(
-                  "flex min-h-[5.5rem] w-full flex-col items-start justify-center gap-1.5 rounded-2xl border px-5 py-4 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink",
-                  flying ? "border-distress bg-distress text-comb" : "border-ink bg-ink text-bg active:bg-ink/80",
-                  phase.at === "flying" && !flying && "opacity-40",
-                )}
-              >
-                <span className="text-xl font-extrabold leading-tight tracking-[-0.02em]">
-                  {flying ? `Going down on ${p.product}…` : p.cta}
-                </span>
-                <span className={clsx("w-full truncate font-mono text-[11.5px]", flying ? "text-comb/80" : "text-comb/75")}>
-                  {p.gist}
-                </span>
-              </button>
+              <div key={p.scenario.id} className="flex flex-col gap-3">
+                {!p.featured && PRESETS[i - 1]?.featured ? (
+                  <p className="label pt-2">Or a famous failure a model may already know</p>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={!bee || phase.at === "flying"}
+                  onClick={() => void fly(p)}
+                  className={clsx(
+                    "flex w-full flex-col items-start justify-center rounded-2xl border px-5 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink",
+                    p.featured ? "min-h-[9.5rem] gap-2.5 border-2 py-5" : "min-h-[5.5rem] gap-1.5 py-4",
+                    flying ? "border-distress bg-distress text-comb" : "border-ink bg-ink text-bg active:bg-ink/80",
+                    phase.at === "flying" && !flying && "opacity-40",
+                  )}
+                >
+                  {p.featured ? (
+                    <span
+                      className={clsx(
+                        "rounded-full px-2.5 py-1 font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em]",
+                        flying ? "bg-comb text-distress" : "bg-bg text-ink",
+                      )}
+                    >
+                      Start here · fictional vendor
+                    </span>
+                  ) : null}
+                  <span
+                    className={clsx(
+                      "font-extrabold tracking-[-0.02em]",
+                      p.featured ? "text-[1.7rem] leading-[1.05]" : "text-xl leading-tight",
+                    )}
+                  >
+                    {flying ? `Going down on ${p.product}…` : p.cta}
+                  </span>
+                  <span className={clsx("w-full truncate font-mono text-[11.5px]", flying ? "text-comb/80" : "text-comb/75")}>
+                    {p.gist}
+                  </span>
+                  {p.featured ? (
+                    <span className={clsx("text-sm leading-snug", flying ? "text-comb/85" : "text-comb/80")}>
+                      Its rule is in no docs and no training data. Only the hive knows the way through.
+                    </span>
+                  ) : null}
+                </button>
+              </div>
             );
           })}
           <p className="pt-1 text-center text-sm text-mute">One tap sends a real mayday. Nothing to type.</p>
@@ -240,7 +272,7 @@ export function Join() {
       {phase.at === "failed" ? (
         <section className="flex flex-col gap-4" aria-live="assertive">
           <div className="rounded-2xl border border-distress/60 bg-distress/10 px-5 py-4">
-            <span className="label text-distress!">Mayday not sent</span>
+            <span className="label">Mayday not sent</span>
             <p className="mt-2 text-lg font-semibold leading-snug text-ink">{phase.error}</p>
           </div>
           <button type="button" className={BIG_BUTTON} onClick={() => void fly(phase.preset)}>
@@ -255,7 +287,7 @@ export function Join() {
       {phase.at === "briefed" ? (
         <section className="flex flex-col gap-4" aria-live="polite">
           <div className="rounded-2xl border border-distress/60 bg-distress/10 px-5 py-4">
-            <span className="label text-distress!">Mayday sent · {phase.preset.product}</span>
+            <span className="label">Mayday sent · {phase.preset.product}</span>
             <p className="mt-2 break-words font-mono text-[12px] leading-relaxed text-ink/80">{phase.preset.gist}</p>
           </div>
 
@@ -271,7 +303,8 @@ export function Join() {
               <div className="flex flex-wrap items-center gap-2">
                 {phase.flare.kind === "official" ? (
                   <span className="rounded-full border border-flare bg-flare px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.12em] text-comb">
-                    Pinned by the {phase.briefing.vendor?.name ?? phase.preset.product} tower · claim not verified
+                    Pinned by the {phase.briefing.vendor?.name ?? phase.preset.product} tower ·{" "}
+                    {phase.briefing.vendor?.verified === true ? "verified vendor" : "claim not verified"}
                   </span>
                 ) : (
                   <span className="rounded-full border border-flare/60 bg-flare/10 px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.12em] text-flare">
@@ -300,7 +333,7 @@ export function Join() {
 
           {phase.error ? (
             <p className="rounded-xl border border-distress/60 bg-distress/10 px-4 py-3 text-base font-semibold text-distress" role="alert">
-              {phase.error} Tap again.
+              {phase.error}
             </p>
           ) : null}
 
@@ -317,14 +350,23 @@ export function Join() {
 
       {phase.at === "rescued" ? (
         <section className="flex flex-col gap-4" aria-live="polite">
-          <div className="rounded-2xl border border-ink bg-comb px-5 py-6">
-            <span className="label">{phase.preset.product} · 3 minutes saved</span>
-            <h2 className="mt-2 text-[2.75rem] font-extrabold! leading-none text-ink">Rescued.</h2>
-            <p className="mt-3 text-xl font-semibold leading-snug text-ink">You just capped a cell on the big screen.</p>
-            <p className="mt-2 text-base leading-snug text-mute">
-              Your confirmation pushes that fix up for the next agent that goes down here.
-            </p>
-          </div>
+          {phase.duplicate ? (
+            <div className="rounded-2xl border border-ink bg-comb px-5 py-6">
+              <span className="label">{phase.preset.product} · exactly once</span>
+              <h2 className="mt-2 text-[2.1rem] font-extrabold! leading-[1.02] text-ink">Already confirmed.</h2>
+              <p className="mt-3 text-xl font-semibold leading-snug text-ink">{DUPLICATE_RESCUE}</p>
+              <p className="mt-2 text-base leading-snug text-mute">Nothing was counted twice. Fly again to send a new mayday.</p>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-ink bg-comb px-5 py-6">
+              <span className="label">{phase.preset.product} · rescue confirmed</span>
+              <h2 className="mt-2 text-[2.75rem] font-extrabold! leading-none text-ink">Rescued.</h2>
+              <p className="mt-3 text-xl font-semibold leading-snug text-ink">You just capped a cell on the big screen.</p>
+              <p className="mt-2 text-base leading-snug text-mute">
+                Your confirmation pushes that fix up for the next agent that goes down here.
+              </p>
+            </div>
+          )}
           <button type="button" className={BIG_BUTTON} onClick={again}>
             Fly again
           </button>

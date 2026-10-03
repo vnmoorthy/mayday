@@ -8,7 +8,14 @@ import type { Billing } from "@/lib/types";
 import { api, errorMessage } from "./api";
 import { SectionHead } from "./parts";
 
-export type BillingView = Billing & { stripe?: { configured: boolean; mode: string } };
+export type BillingView = Billing & {
+  stripe?: { configured: boolean; mode: string };
+  // Newer billing responses carry the vendor's daily spend cap. Older ones do not.
+  daily_cap_cents?: number | null;
+  billed_today_cents?: number | null;
+};
+
+const cents = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
 export type BillingState =
   | { status: "loading" }
@@ -124,7 +131,26 @@ export function BillingPanel({
             <Row label="Rate per rescue" value={dollars(state.data.rate_cents)} />
             <Row label="Billable rescues" value={state.data.billable_rescues.toLocaleString("en")} tone="text-rescue" />
             <Row label="Billed to Stripe" value={state.data.billed_rescues.toLocaleString("en")} />
+            {cents(state.data.daily_cap_cents) !== null ? (
+              <Row label="Daily spend cap" value={dollars(cents(state.data.daily_cap_cents) ?? 0)} />
+            ) : null}
+            {cents(state.data.billed_today_cents) !== null ? (
+              <Row
+                label="Billed today"
+                value={
+                  cents(state.data.daily_cap_cents) !== null
+                    ? `${dollars(cents(state.data.billed_today_cents) ?? 0)} of ${dollars(cents(state.data.daily_cap_cents) ?? 0)}`
+                    : dollars(cents(state.data.billed_today_cents) ?? 0)
+                }
+              />
+            ) : null}
           </div>
+          <p className="text-sm font-semibold text-ink">A mayday can be rescued, and billed, once.</p>
+          {cents(state.data.daily_cap_cents) !== null ? (
+            <p className="max-w-xl text-sm leading-relaxed text-mute">
+              Billing stops for the day once the daily spend cap is reached. Rescues past the cap are still recorded, but are not billable.
+            </p>
+          ) : null}
           <p className="max-w-xl text-sm leading-relaxed text-mute">
             {!claimed
               ? "Nothing is billable until the airspace is claimed. After that, a rescue counts only when your pinned official fix gets an agent through."

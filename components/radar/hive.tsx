@@ -3,7 +3,7 @@ import { memo, useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import { motion, useReducedMotion } from "framer-motion";
-import { rescueRate } from "@/lib/format";
+import { rescueRate, timeAgo } from "@/lib/format";
 import { HEX, NEIGHBOURS, centre, f, hexPoints, type Cell, type Cluster, type Comb } from "./comb";
 import type { Pulse } from "./geometry";
 
@@ -312,7 +312,7 @@ const ClusterView = memo(function ClusterView({
                 key={site.id}
                 role="button"
                 tabIndex={0}
-                aria-label={`${site.title}. ${cluster.name}, ${site.surface}. ${site.maydays_count} agents down, ${rescueRate(site.maydays_count, site.rescues_count)}% rescued. Open summary.`}
+                aria-label={`${site.title}. ${cluster.name}, ${site.surface}. ${site.maydays_count} agents down, ${rescueRate(site.maydays_count, site.rescues_count)}% rescued.${site.charted === false ? " First seen in the wild, not charted." : ""} Open summary.`}
                 className="cursor-pointer outline-none"
                 onMouseEnter={(e) => onShow(site.id, e.currentTarget)}
                 onMouseLeave={() => onHide(site.id)}
@@ -377,6 +377,20 @@ const ClusterView = memo(function ClusterView({
                       fill="#ffffff"
                       fillOpacity="0.7"
                     />
+                  </>
+                ) : null}
+                {/* First seen in the wild: not one of the charted failures. A black wall marks the
+                    cell, with a black notch at its top corner so it still reads when the cell is small. */}
+                {site.charted === false ? (
+                  <>
+                    <polygon
+                      points={hexPoints(cell.x, cell.y, RIM)}
+                      fill="none"
+                      style={{ stroke: INK }}
+                      strokeWidth="3.2"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx={f(cell.x)} cy={f(cell.y - RIM)} r={f(HEX * 0.16)} style={{ fill: INK }} />
                   </>
                 ) : null}
               </g>
@@ -498,6 +512,14 @@ function Tooltip({ tip, cell, vendor }: { tip: Tip; cell: Cell; vendor: string }
         {vendor} · {site.surface}
       </p>
       <p className="mt-1.5 text-sm leading-snug text-ink">{site.title}</p>
+      {site.charted === false ? (
+        <p className="mt-2 text-xs font-semibold leading-snug text-ink">
+          <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-ink align-middle" aria-hidden />
+          First seen in the wild {timeAgo(site.first_seen)} · not charted
+        </p>
+      ) : site.charted === true ? (
+        <p className="mt-2 text-xs leading-snug text-mute">Charted from a known failure pattern</p>
+      ) : null}
       <div className="tabular mt-2.5 flex items-center justify-between gap-3 border-t border-line pt-2 font-mono text-xs">
         <span className="flex items-center gap-1.5 text-ink">
           <span className="h-1.5 w-1.5 bg-distress" aria-hidden />

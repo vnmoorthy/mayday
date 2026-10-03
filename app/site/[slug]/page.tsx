@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { ButtonLink, Empty, Stat } from "@/components/ui";
 import { Ago } from "@/components/tower/ago";
 import { CodeBlock, NotConnected, PAGE, RateBar, Replay, SectionHead, SOURCE_LABEL, VendorDot } from "@/components/tower/parts";
+import { Provenance, pinnedLabel } from "@/components/tower/labels";
 import { SiteFlares } from "@/components/tower/site-flares";
 import { getSiteDetail } from "@/lib/data";
 import { minutesToHuman, rescueRate } from "@/lib/format";
@@ -50,6 +51,7 @@ export default async function SitePage({ params }: Props) {
   const { site, vendor, flares, maydays } = detail;
   const down = site.maydays_count;
   const hasOfficial = flares.some((f) => f.kind === "official");
+  const verified = vendor.claimed && vendor.verified === true;
   // Say where the recent maydays came from, so charted patterns and test
   // flights are never read as live traffic.
   const mix = SOURCES.map((s) => ({ source: s, n: maydays.filter((m) => m.source === s).length })).filter((x) => x.n > 0);
@@ -74,6 +76,17 @@ export default async function SitePage({ params }: Props) {
           down here
         </p>
         <h1 className="max-w-4xl break-words text-2xl font-bold! text-mute sm:text-3xl">{site.title}</h1>
+        {site.charted === false ? (
+          <div className="flex flex-col items-start gap-2">
+            <Provenance site={site} className="px-3.5! py-1! text-xs!" />
+            <p className="max-w-2xl text-sm text-ink">
+              Not one of the failures charted in advance: an agent reported this first, so a model is unlikely to know it
+              from training.
+            </p>
+          </div>
+        ) : (
+          <Provenance site={site} className="text-sm!" />
+        )}
 
         <div className="label flex flex-wrap items-center gap-x-6 gap-y-2">
           <Link href={`/tower/${encodeURIComponent(vendor.slug)}`} className="inline-flex items-center gap-2 text-ink hover:underline">
@@ -82,7 +95,7 @@ export default async function SitePage({ params }: Props) {
           </Link>
           <span>{site.kind}</span>
           {hasOfficial ? (
-            <span className="font-bold text-flare!">Pinned by the {vendor.name} tower · claim not verified</span>
+            <span className="font-bold text-flare!">{pinnedLabel(vendor.name, verified)}</span>
           ) : (
             <span>No fix pinned by the tower</span>
           )}
@@ -148,12 +161,14 @@ export default async function SitePage({ params }: Props) {
         </div>
 
         <div className="flex min-w-0 flex-col gap-14">
-          <SiteFlares siteId={site.id} vendorName={vendor.name} initial={flares} index={["03", "04"]} />
+          <SiteFlares siteId={site.id} vendorName={vendor.name} verified={verified} initial={flares} index={["03", "04"]} />
 
           <section className="flex flex-col gap-6" aria-labelledby="tower-heading">
             <SectionHead index="05" title={vendor.claimed ? "Claimed airspace" : "Unclaimed airspace"} id="tower-heading" />
             <p className="max-w-xl text-base text-mute">
-              {vendor.claimed
+              {verified
+                ? `The ${vendor.name} tower is claimed by a vendor Mayday has verified, and it can pin a fix here.`
+                : vendor.claimed
                 ? `The ${vendor.name} tower has been claimed and can pin a fix here. The claim is not verified: claiming does not yet prove the claimant is ${vendor.name}.`
                 : `Unclaimed airspace: nothing here was written by ${vendor.name}. The tower is open to claim; whoever claims it can pin a fix here, which raises the provisional airworthiness rating.`}
             </p>

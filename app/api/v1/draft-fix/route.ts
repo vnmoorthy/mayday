@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { draftText } from "@/lib/ai";
 import { getSiteDetail } from "@/lib/data";
-import { HttpError, LIMITS, json, preflight, readBody, route } from "@/lib/http";
+import { HttpError, json, limit, LIMITS, preflight, readBody, route } from "@/lib/http";
 import type { SiteDetail } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -122,6 +122,8 @@ function parseDraft(raw: string): { body: string; fix_snippet: string } {
 // Drafts the vendor's official fix for one crash site. This only drafts:
 // nothing is written or pinned. Pinning goes through POST /api/v1/flare.
 export const POST = route(async (req: Request) => {
+  const limited = await limit(req, "draft-fix", 12);
+  if (limited) return limited;
   const { site } = await readBody(req, draftFixBody);
   const detail = await getSiteDetail(site);
   if (!detail) throw new HttpError(404, `Crash site "${site}" not found.`);

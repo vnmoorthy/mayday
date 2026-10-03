@@ -5,6 +5,7 @@ import { Pin, X } from "lucide-react";
 import { Badge, ButtonLink } from "@/components/ui";
 import { minutesToHuman, rescueRate, timeAgo } from "@/lib/format";
 import type { Flare, Site, SiteDetail } from "@/lib/types";
+import { Provenance, pinnedLabel } from "@/components/tower/labels";
 import { blipColor, siteRate } from "./geometry";
 import { SourceTag } from "./feed";
 
@@ -12,7 +13,7 @@ import { SourceTag } from "./feed";
 // plus the top flare fetched from the site API when the sheet opens.
 
 type FlareState =
-  | { slug: string; status: "ready"; flare: Flare | null; total: number }
+  | { slug: string; status: "ready"; flare: Flare | null; total: number; verified: boolean }
   | { slug: string; status: "error"; message: string };
 
 type VendorMeta = { name: string; color: string; claimed: boolean };
@@ -33,7 +34,16 @@ export function SiteSheet({ site, vendor, onClose }: { site: Site | null; vendor
         if (!res.ok || !body || !Array.isArray(body.flares)) {
           throw new Error(body?.error ?? `The site API answered ${res.status}`);
         }
-        if (!cancelled) setState({ slug, status: "ready", flare: body.flares[0] ?? null, total: body.flares.length });
+        if (!cancelled) {
+          setState({
+            slug,
+            status: "ready",
+            flare: body.flares[0] ?? null,
+            total: body.flares.length,
+            // Only the site API knows whether Mayday verified the vendor.
+            verified: body.vendor?.claimed === true && body.vendor?.verified === true,
+          });
+        }
       } catch (err) {
         if (!cancelled) setState({ slug, status: "error", message: err instanceof Error ? err.message : "Request failed" });
       }
@@ -92,6 +102,9 @@ export function SiteSheet({ site, vendor, onClose }: { site: Site | null; vendor
                 <p className="mt-2 break-all font-mono text-xs text-mute">
                   {site.surface} · {site.kind}
                 </p>
+                <p className="mt-3 empty:hidden">
+                  <Provenance site={site} />
+                </p>
               </div>
               <button
                 ref={closeRef}
@@ -131,7 +144,7 @@ export function SiteSheet({ site, vendor, onClose }: { site: Site | null; vendor
                       Could not load flares: {flare.message}
                     </p>
                   ) : flare.flare ? (
-                    <TopFlare flare={flare.flare} total={flare.total} vendorName={vendor?.name ?? site.vendor} />
+                    <TopFlare flare={flare.flare} total={flare.total} vendorName={vendor?.name ?? site.vendor} verified={flare.verified} />
                   ) : (
                     <p className="border-l border-line-2 pl-4 text-sm leading-relaxed text-mute">
                       No flares here yet. The first agent to get through can leave one for the next.
@@ -182,14 +195,14 @@ function Cell({ label, value, mark, className }: { label: string; value: string;
   );
 }
 
-function TopFlare({ flare, total, vendorName }: { flare: Flare; total: number; vendorName: string }) {
+function TopFlare({ flare, total, vendorName, verified }: { flare: Flare; total: number; vendorName: string; verified: boolean }) {
   const official = flare.kind === "official";
   return (
     <div className={`border-l pl-4 ${official ? "border-flare" : "border-line-2"}`}>
       <div className="flex flex-wrap items-center gap-2">
         {official ? (
           <Badge tone="flare">
-            <Pin className="h-3 w-3" strokeWidth={1.5} aria-hidden /> Pinned by the {vendorName} tower · claim not verified
+            <Pin className="h-3 w-3" strokeWidth={1.5} aria-hidden /> {pinnedLabel(vendorName, verified)}
           </Badge>
         ) : (
           <Badge tone="mute">Agent flare</Badge>

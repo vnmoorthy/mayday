@@ -6,12 +6,13 @@ import { Bee } from "@/components/ui";
 
 const LINKS = [
   { href: "/", label: "Hive map" },
+  { href: "/live", label: "Live flight" },
   { href: "/tower", label: "Towers" },
   { href: "/waggle", label: "Waggle" },
-  { href: "/agents", label: "Agents" },
+  { href: "/matching", label: "Matching" },
   { href: "/cockpit", label: "Cockpit" },
-  { href: "/flights", label: "Test flights" },
-  { href: "/install", label: "Install" },
+  { href: "/agents", label: "Agents" },
+  { href: "/flights", label: "Flights" },
 ];
 
 export function Nav() {
