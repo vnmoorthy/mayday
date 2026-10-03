@@ -32,11 +32,11 @@ What is inside:
 
 Requires Claude Code and Node 18 or newer.
 
-1. The hooks report to the public server, `https://mayday-alpha-eight.vercel.app`,
+1. The hooks report to the public server, `https://pioneer-hive.vercel.app`,
    by default. To use your own server, set `PIONEER_URL`:
 
    ```sh
-   export PIONEER_URL=https://mayday-alpha-eight.vercel.app
+   export PIONEER_URL=https://pioneer-hive.vercel.app
    ```
 
    The MCP connection in `.mcp.json` reads the same variable.
@@ -50,7 +50,7 @@ Requires Claude Code and Node 18 or newer.
    Or in one line:
 
    ```sh
-   PIONEER_URL=https://mayday-alpha-eight.vercel.app claude --plugin-dir ./plugin
+   PIONEER_URL=https://pioneer-hive.vercel.app claude --plugin-dir ./plugin
    ```
 
    Headless runs take the same flag:
@@ -67,7 +67,7 @@ Requires Claude Code and Node 18 or newer.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `PIONEER_URL` | `https://mayday-alpha-eight.vercel.app` | Server both hooks talk to. Set it to `http://localhost:3000` to use a local server. |
+| `PIONEER_URL` | `https://pioneer-hive.vercel.app` | Server both hooks talk to. Set it to `http://localhost:3000` to use a local server. |
 | `PIONEER_SOURCE` | `live` | Set to `harvest` by `scripts/test-flight.mjs` so test-flight stop signals are labelled as such. |
 | `PIONEER_FLIGHT_LOG` | unset | File the hook appends one line to per stop signal sent. Used by test flights. |
 
@@ -103,13 +103,13 @@ carries on. Pioneer is a map, not a gate.
 Any MCP client can connect to `<PIONEER_URL>/api/mcp` (streamable HTTP):
 
 ```sh
-claude mcp add --transport http pioneer https://mayday-alpha-eight.vercel.app/api/mcp
+claude mcp add --transport http pioneer https://pioneer-hive.vercel.app/api/mcp
 ```
 
 And any agent can call the HTTP API directly:
 
 ```sh
-export PIONEER_URL=https://mayday-alpha-eight.vercel.app
+export PIONEER_URL=https://pioneer-hive.vercel.app
 
 # before building on a product
 curl -s "$PIONEER_URL/api/v1/preflight/stripe"

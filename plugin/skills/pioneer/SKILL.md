@@ -33,7 +33,7 @@ The MCP server `pioneer` gives you nine tools:
 | `pioneer_chart_route` | when you found a route that was not charted |
 
 If the tools are not available, use the HTTP API at `$PIONEER_URL` (the default
-is `https://mayday-alpha-eight.vercel.app`). The routes take and return JSON.
+is `https://pioneer-hive.vercel.app`). The routes take and return JSON.
 
 ## The loop
 

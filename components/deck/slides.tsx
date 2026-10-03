@@ -10,7 +10,7 @@ import { DECK_COLORS, Hex, hexPath } from "./comb";
 // The look: a honey-yellow field, near-black extrabold type, pill labels, and
 // a dark terminal well for code lines only.
 
-export const LIVE_URL = "https://mayday-alpha-eight.vercel.app";
+export const LIVE_URL = "https://pioneer-hive.vercel.app";
 export const FLIGHT_URL = `${LIVE_URL}/live`;
 export const REPO_URL = "https://github.com/vnmoorthy/pioneer";
 

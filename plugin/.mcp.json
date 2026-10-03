@@ -2,7 +2,7 @@
   "mcpServers": {
     "pioneer": {
       "type": "http",
-      "url": "${PIONEER_URL:-https://mayday-alpha-eight.vercel.app}/api/mcp"
+      "url": "${PIONEER_URL:-https://pioneer-hive.vercel.app}/api/mcp"
     }
   }
 }

@@ -129,7 +129,7 @@ went down.
 ```bash
 node scripts/test-flight.mjs --scenario stripe-webhook --runs 3
 node scripts/test-flight.mjs --scenario stripe-webhook --runs 3 --no-pioneer   # control
-node scripts/test-flight.mjs --scenario supabase-client --url https://mayday-alpha-eight.vercel.app
+node scripts/test-flight.mjs --scenario supabase-client --url https://pioneer-hive.vercel.app
 node scripts/test-flight.mjs --help
 ```
 

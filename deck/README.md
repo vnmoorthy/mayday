@@ -4,7 +4,7 @@
 bold type, pill labels, 16:9. It mirrors the web deck. It is generated, not
 hand-edited, so change the script and rebuild.
 
-The animated version lives at https://mayday-alpha-eight.vercel.app/deck.
+The animated version lives at https://pioneer-hive.vercel.app/deck.
 
 ## Regenerate
 

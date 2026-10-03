@@ -690,7 +690,7 @@ telling an agent when to call each tool.
 hook below and `hooks/vaccinate.mjs`, which runs at `SessionStart` and posts
 the project's dependency names to `/api/v1/vaccine`), an MCP connection
 (`.mcp.json`) and a skill (`skills/pioneer/SKILL.md`). Both hooks default to
-`https://mayday-alpha-eight.vercel.app` and read `PIONEER_URL` to point
+`https://pioneer-hive.vercel.app` and read `PIONEER_URL` to point
 elsewhere.
 
 `hooks/hooks.json` registers `hooks/pioneer-hook.mjs` for `PostToolUse` and

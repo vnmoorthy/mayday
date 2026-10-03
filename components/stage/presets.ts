@@ -59,5 +59,5 @@ export const PRESETS: Preset[] = PICKS.flatMap((p) => {
 // shape, so nothing typed into the public API by hand reaches the projector.
 export const BEE_NAME = /^bee-[a-z0-9]{4}$/;
 
-export const JOIN_URL = "https://mayday-alpha-eight.vercel.app/join";
-export const JOIN_URL_SHORT = "mayday-alpha-eight.vercel.app/join";
+export const JOIN_URL = "https://pioneer-hive.vercel.app/join";
+export const JOIN_URL_SHORT = "pioneer-hive.vercel.app/join";

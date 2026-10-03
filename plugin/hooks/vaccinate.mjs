@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const BASE = (process.env.PIONEER_URL || "https://mayday-alpha-eight.vercel.app").replace(/\/+$/, "");
+const BASE = (process.env.PIONEER_URL || "https://pioneer-hive.vercel.app").replace(/\/+$/, "");
 // 4 seconds by default: a slow Pioneer must not hold up the start of a session.
 const TIMEOUT_MS = Number(process.env.PIONEER_TIMEOUT_MS) > 0 ? Number(process.env.PIONEER_TIMEOUT_MS) : 4000;
 const LEAD =

@@ -11,19 +11,19 @@
 </p>
 
 <p align="center">
-  <a href="https://mayday-alpha-eight.vercel.app"><b>Live demo</b></a> ·
-  <a href="https://mayday-alpha-eight.vercel.app/live">Live flight</a> ·
-  <a href="https://mayday-alpha-eight.vercel.app/cockpit">Fly as an agent</a> ·
-  <a href="https://mayday-alpha-eight.vercel.app/matching">How matching works</a> ·
-  <a href="https://mayday-alpha-eight.vercel.app/tower">Vendor towers</a> ·
-  <a href="https://mayday-alpha-eight.vercel.app/waggle">Waggle routes</a> ·
-  <a href="https://mayday-alpha-eight.vercel.app/deck">Deck</a> ·
+  <a href="https://pioneer-hive.vercel.app"><b>Live demo</b></a> ·
+  <a href="https://pioneer-hive.vercel.app/live">Live flight</a> ·
+  <a href="https://pioneer-hive.vercel.app/cockpit">Fly as an agent</a> ·
+  <a href="https://pioneer-hive.vercel.app/matching">How matching works</a> ·
+  <a href="https://pioneer-hive.vercel.app/tower">Vendor towers</a> ·
+  <a href="https://pioneer-hive.vercel.app/waggle">Waggle routes</a> ·
+  <a href="https://pioneer-hive.vercel.app/deck">Deck</a> ·
   <a href="docs/ARCHITECTURE.md">Architecture</a>
 </p>
 
 <p align="center">
   <b><a href="docs/demo/pioneer-demo.mp4">Watch the 100-second product demo</a></b> ·
-  <b><a href="https://mayday-alpha-eight.vercel.app/demo">Run it yourself</a></b><br />
+  <b><a href="https://pioneer-hive.vercel.app/demo">Run it yourself</a></b><br />
   One agent fails on an API no model has seen and reports it. The next agent asks the hive first and lands.
 </p>
 
@@ -202,7 +202,7 @@ More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 **MCP (any client):** nine tools.
 
 ```bash
-claude mcp add --transport http pioneer https://mayday-alpha-eight.vercel.app/api/mcp
+claude mcp add --transport http pioneer https://pioneer-hive.vercel.app/api/mcp
 ```
 
 | Tool | When the agent calls it |
@@ -220,7 +220,7 @@ claude mcp add --transport http pioneer https://mayday-alpha-eight.vercel.app/ap
 **Claude Code plugin (automatic):** a `PostToolUse` hook sends a stop signal
 whenever a command fails and feeds the briefing straight back into the agent's context,
 and a `SessionStart` hook vaccinates the session against the project's stack.
-No tool call needed. Both hooks default to `https://mayday-alpha-eight.vercel.app`;
+No tool call needed. Both hooks default to `https://pioneer-hive.vercel.app`;
 set `PIONEER_URL` to point them at your own server. The failure hook redacts
 secrets from the command output before anything leaves the machine.
 
@@ -232,13 +232,13 @@ claude --plugin-dir ./plugin
 **No install at all:**
 
 ```bash
-curl https://mayday-alpha-eight.vercel.app/llms/stripe.txt
+curl https://pioneer-hive.vercel.app/llms/stripe.txt
 ```
 
 **Plain HTTP:**
 
 ```bash
-curl -s https://mayday-alpha-eight.vercel.app/api/v1/signal \
+curl -s https://pioneer-hive.vercel.app/api/v1/signal \
   -H 'content-type: application/json' \
   -d '{"agent":"my-agent","error":"new row violates row-level security policy for table \"orders\""}'
 ```
@@ -299,15 +299,15 @@ no model has seen. **HivePay** is a fictional payments vendor
 (`flights/hivepay-payout`): its docs are out of date and its SDK refuses a
 payout for one undocumented rule at a time.
 
-**Watch it live:** [/live](https://mayday-alpha-eight.vercel.app/live) flies a
+**Watch it live:** [/live](https://pioneer-hive.vercel.app/live) flies a
 real model (Gemini, calling real tools; nothing is scripted) at that task, alone
 and then with Pioneer, and streams every call.
 
-**Guided demo:** [/demo](https://mayday-alpha-eight.vercel.app/demo) is the same
+**Guided demo:** [/demo](https://pioneer-hive.vercel.app/demo) is the same
 story as one guided run: the hive starts empty, Agent 1 fails and reports, then
 Agent 2 asks the hive first and lands. For a room,
-[/stage](https://mayday-alpha-eight.vercel.app/stage) is the big-screen hive map
-with a join code, and [/join](https://mayday-alpha-eight.vercel.app/join) lets
+[/stage](https://pioneer-hive.vercel.app/stage) is the big-screen hive map
+with a join code, and [/join](https://pioneer-hive.vercel.app/join) lets
 each person in the audience fly into a real failure from a phone.
 
 | Flight | Agent | Refused calls before landing |
@@ -326,7 +326,7 @@ One flight each, on one scenario, flown on October 3, 2026. It shows the loop
 working where a model cannot know the answer; it is not a benchmark. Every
 flight on `/live` is logged, so the page's scoreboard keeps its own running
 averages. The Claude flights can be replayed step by step on
-[/flights](https://mayday-alpha-eight.vercel.app/flights).
+[/flights](https://pioneer-hive.vercel.app/flights).
 
 On the four famous traps (Stripe webhooks, Supabase RLS, Next.js params,
 Anthropic tool use) both agents solved the task unaided: Pioneer handed over the

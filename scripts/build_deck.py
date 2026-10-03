@@ -31,7 +31,7 @@ from pptx.util import Inches, Pt
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "deck" / "Pioneer.pptx"
 ART = ROOT / "public" / "art"
-SITE = "https://mayday-alpha-eight.vercel.app"
+SITE = "https://pioneer-hive.vercel.app"
 REPO = "https://github.com/vnmoorthy/pioneer"
 HOST = SITE.replace("https://", "")
 ANIMATE = "--no-animations" not in sys.argv

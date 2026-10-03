@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 MSG="${1:-Sync}"
-URL="https://mayday-alpha-eight.vercel.app"
+URL="https://pioneer-hive.vercel.app"
 
 echo "== type-check"
 pnpm exec tsc --noEmit

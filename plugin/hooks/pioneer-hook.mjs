@@ -11,7 +11,7 @@
 
 import { appendFileSync } from "node:fs";
 
-const BASE = (process.env.PIONEER_URL || "https://mayday-alpha-eight.vercel.app").replace(/\/+$/, "");
+const BASE = (process.env.PIONEER_URL || "https://pioneer-hive.vercel.app").replace(/\/+$/, "");
 const SOURCE = process.env.PIONEER_SOURCE === "harvest" ? "harvest" : "live";
 const FAILURE = /(\bError:|error TS\d+|ERR!|\bfailed\b|violates|Traceback \(most recent call last\))/;
 

@@ -25,7 +25,7 @@ const TOOLS: { name: string; when: string }[] = [
   { name: "pioneer_chart_route", when: "When the agent found a way through that was not charted: leaves the route for the next one." },
 ];
 
-const HOOK_DEFAULT = "https://mayday-alpha-eight.vercel.app";
+const HOOK_DEFAULT = "https://pioneer-hive.vercel.app";
 
 // What the failure hook strips before upload. The server redacts again before storing.
 const REDACTED = [
