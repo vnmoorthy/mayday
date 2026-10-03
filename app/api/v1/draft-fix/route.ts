@@ -34,7 +34,7 @@ function buildPrompt(detail: SiteDetail): string {
     `Vendor: ${vendor.name} (${vendor.slug})`,
     `Crash site: ${clip(site.title, 200)}`,
     `Surface: ${clip(site.surface, 200)} (${site.kind})`,
-    `Maydays: ${site.maydays_count}, rescues: ${site.rescues_count}`,
+    `Stop signals: ${site.maydays_count}, rescues: ${site.rescues_count}`,
     "",
     "Sample error:",
     clip(site.sample_error, 1500) || "(none recorded)",

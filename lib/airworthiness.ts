@@ -9,7 +9,7 @@ export type RatingInput = {
   rescues: number;
   minutes_lost: number;
   sites: number;
-  // Maydays that happened at crash sites where the vendor has pinned an official fix.
+  // Stop signals sent from crash sites where the vendor has pinned an official fix.
   covered_maydays: number;
   covered_sites: number;
 };
@@ -18,7 +18,7 @@ export type Rating = RatingInput & {
   score: number | null; // 0..100, null when there is no traffic to rate
   grade: Grade;
   rescue_rate: number; // 0..1
-  coverage: number; // 0..1, share of maydays at sites with an official fix
+  coverage: number; // 0..1, share of stop signals at sites with an official fix
   avg_minutes_lost: number;
   summary: string;
 };

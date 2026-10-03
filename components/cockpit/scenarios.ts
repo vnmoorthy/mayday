@@ -3,7 +3,7 @@ import type { Attempt } from "@/lib/types";
 // Ready-made incidents for the cockpit. The error text is what each product
 // really emits; the black box is what an agent typically tries before giving up.
 // The first one is HivePay, a fictional vendor: its rule is in no model's
-// training data, which is the kind of failure Mayday exists for.
+// training data, which is the kind of failure Pioneer exists for.
 
 export type VendorChoice = "auto" | "hivepay" | "stripe" | "supabase" | "vercel" | "anthropic";
 

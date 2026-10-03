@@ -10,8 +10,8 @@ import type { Pulse } from "./geometry";
 // The hive map: one honeycomb per vendor, one cell per crash site. Each
 // cluster is its own SVG in a CSS grid, so the map wraps on narrow screens
 // without any measuring, and the shared lattice makes the row read as one comb.
-// A mayday pulses its cell red and ripples once through the six cells around
-// it: the stop signal spreading through the hive.
+// A stop signal pulses its cell red and ripples once through the six cells
+// around it: the warning spreading through the hive.
 
 // Every cell is drawn as a real wax cell: a lit rim, a recessed well, honey
 // pooled inside it (more honey, more agents down), a red glow when agents are
@@ -198,7 +198,7 @@ export function Hive({ comb, pulses, fixes, activeVendor, openSiteId, onToggleVe
             <span className="label">Quiet hive</span>
             <p className="mt-2 text-lg leading-snug text-ink">No crash sites charted yet</p>
             <p className="mt-2 text-sm leading-relaxed text-mute">
-              The first mayday fills a cell on the hive map.{" "}
+              The first stop signal fills a cell on the hive map.{" "}
               <Link href="/cockpit" className="text-ink underline decoration-line-2 underline-offset-4 hover:decoration-ink">
                 Send one from the cockpit
               </Link>
@@ -398,7 +398,7 @@ const ClusterView = memo(function ClusterView({
           })}
         </g>
 
-        {/* Fresh traffic: red rings and a red flash for a mayday, a pale wax cap flash for a rescue. */}
+        {/* Fresh traffic: red rings and a red flash for a stop signal, a pale wax cap flash for a rescue. */}
         {pulses.map((p) => {
           const cell = byId.get(p.siteId);
           if (!cell) return null;

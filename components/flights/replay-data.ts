@@ -1,18 +1,18 @@
 import "server-only";
 import { getRecentMaydays, getRecentRescues, getRoutes, getSiteDetail, getSites } from "@/lib/data";
-import type { FeedMayday, FeedRescue, Flare, Route, Site } from "@/lib/types";
+import type { FeedSignal, FeedRescue, Flare, Route, Site } from "@/lib/types";
 import type { Replay, ReplayEntry } from "./replay-types";
 
 // The flight replay: two real agents flying flights/hivepay-payout, a scenario
 // on a fictional vendor whose requirements no model was trained on. Everything
-// here is read from the rows they left behind: maydays, flares, the route and
+// here is read from the rows they left behind: stop signals, flares, the route and
 // rescues. No row, no entry.
 
 export const HIVEPAY = "hivepay";
 export const PIONEER = "claude-pioneer";
 export const FOLLOWER = "claude-follower";
 
-// "down" is every mayday's starting state and says nothing "Check run failed"
+// "down" is every stop signal's starting state and says nothing "Check run failed"
 // does not, so only the outcomes that add information get a tag.
 const OUTCOME: Record<string, string> = { rescued: "rescued", self_recovered: "self-recovered" };
 
@@ -51,7 +51,7 @@ type Timed = { t: number; order: number; entry: ReplayEntry };
 
 const chronological = (items: Timed[]) => items.sort((a, b) => a.t - b.t || a.order - b.order).map((i) => i.entry);
 
-function maydayEntry(m: FeedMayday): Timed {
+function maydayEntry(m: FeedSignal): Timed {
   const attempts = Array.isArray(m.attempts)
     ? m.attempts.slice(0, 8).map((a, i) => ({
         step: Number(a?.step ?? i + 1) || i + 1,
@@ -100,7 +100,7 @@ const EMPTY: Replay = {
 // loader can be pointed at another vendor and pair of agents.
 export async function loadReplay(vendor: string = HIVEPAY, pioneerAgent: string = PIONEER, followerAgent: string = FOLLOWER): Promise<Replay> {
   let sites: Site[] = [];
-  let maydays: FeedMayday[] = [];
+  let maydays: FeedSignal[] = [];
   let routes: Route[] = [];
   let rescues: FeedRescue[] = [];
   try {
@@ -131,7 +131,7 @@ export async function loadReplay(vendor: string = HIVEPAY, pioneerAgent: string 
   const route = routes.find((r) => r.author === pioneerAgent) ?? routes[0] ?? null;
   const steps = route ? routeSteps(route) : [];
 
-  // --- pioneer: maydays, flares and the route, in the order they were recorded.
+  // --- pioneer: stop signals, flares and the route, in the order they were recorded.
   const pioneer: Timed[] = pioneerMaydays.map(maydayEntry);
   for (const f of pioneerFlares) {
     const site = siteById.get(f.site_id);

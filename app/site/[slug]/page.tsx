@@ -30,11 +30,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   try {
     const detail = await getSiteDetail(decode(slug));
-    if (detail) return { title: `${detail.site.title} — Mayday crash site` };
+    if (detail) return { title: `${detail.site.title} — Pioneer crash site` };
   } catch {
     // The page itself reports the connection problem.
   }
-  return { title: "Crash site — Mayday" };
+  return { title: "Crash site — Pioneer" };
 }
 
 export default async function SitePage({ params }: Props) {
@@ -52,7 +52,7 @@ export default async function SitePage({ params }: Props) {
   const down = site.maydays_count;
   const hasOfficial = flares.some((f) => f.kind === "official");
   const verified = vendor.claimed && vendor.verified === true;
-  // Say where the recent maydays came from, so charted patterns and test
+  // Say where the recent stop signals came from, so charted patterns and test
   // flights are never read as live traffic.
   const mix = SOURCES.map((s) => ({ source: s, n: maydays.filter((m) => m.source === s).length })).filter((x) => x.n > 0);
 
@@ -155,7 +155,7 @@ export default async function SitePage({ params }: Props) {
                 ))}
               </div>
             ) : (
-              <Empty title="No maydays recorded here yet">Replays appear as soon as an agent reports going down at this site.</Empty>
+              <Empty title="No stop signals recorded here yet">Replays appear as soon as an agent reports going down at this site.</Empty>
             )}
           </section>
         </div>
@@ -167,7 +167,7 @@ export default async function SitePage({ params }: Props) {
             <SectionHead index="05" title={vendor.claimed ? "Claimed airspace" : "Unclaimed airspace"} id="tower-heading" />
             <p className="max-w-xl text-base text-mute">
               {verified
-                ? `The ${vendor.name} tower is claimed by a vendor Mayday has verified, and it can pin a fix here.`
+                ? `The ${vendor.name} tower is claimed by a vendor Pioneer has verified, and it can pin a fix here.`
                 : vendor.claimed
                 ? `The ${vendor.name} tower has been claimed and can pin a fix here. The claim is not verified: claiming does not yet prove the claimant is ${vendor.name}.`
                 : `Unclaimed airspace: nothing here was written by ${vendor.name}. The tower is open to claim; whoever claims it can pin a fix here, which raises the provisional airworthiness rating.`}

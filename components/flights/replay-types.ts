@@ -19,7 +19,7 @@ export type ReplayEntry = {
   // Route task and steps.
   task?: string;
   steps?: { n: number; text: string }[];
-  // The mayday's black box: what the agent tried and what happened.
+  // The stop signal's black box: what the agent tried and what happened.
   attempts?: { step: number; action: string; result: string }[];
   note?: string;
 };

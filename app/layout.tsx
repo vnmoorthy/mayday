@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mayday — the stop signal for agents",
+  title: "Pioneer — the stop signal for agents",
   description:
-    "A honeybee attacked on a path warns the hive off it. Mayday does that for agents: when one goes down on a product, the next gets the fix, and the vendor sees where agents fail.",
+    "A honeybee attacked on a path warns the hive off it. Pioneer does that for agents: when one goes down on a product, the next gets the fix, and the vendor sees where agents fail.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

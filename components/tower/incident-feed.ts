@@ -3,7 +3,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import type { Incident } from "@/lib/types";
 
-// Incidents arrive by Realtime broadcast: a database trigger on maydays sends
+// Incidents arrive by Realtime broadcast: a database trigger on the maydays table sends
 // one message on the public channel "incidents" the moment a site spikes. One
 // channel is shared by every component on the page and stays open, so a
 // remount never races a channel that is still closing.

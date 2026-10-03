@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Keep the three copies of Mayday in step: type-check, deploy to production,
+# Keep the three copies of Pioneer in step: type-check, deploy to production,
 # run the end-to-end check against production, then commit and push.
 #   scripts/sync.sh "commit message"
 set -euo pipefail

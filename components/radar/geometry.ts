@@ -1,6 +1,6 @@
 import { hash01 } from "@/lib/format";
 import type { Rating } from "@/lib/airworthiness";
-import type { FeedMayday, FeedRescue, Site, VendorStats } from "@/lib/types";
+import type { FeedSignal, FeedRescue, Site, VendorStats } from "@/lib/types";
 
 // Scope geometry. Everything is laid out in a 1000 x 1000 box so the SVG and
 // the HTML blip layer on top of it can share coordinates (x / 10 = percent).
@@ -14,7 +14,7 @@ const OUTER = R - 38; // and off the rim ticks
 export type Snapshot = {
   vendors: VendorStats[];
   sites: Site[];
-  maydays: FeedMayday[];
+  maydays: FeedSignal[];
   rescues: FeedRescue[];
   // Airworthiness per vendor slug. The map API sends it; older snapshots may not.
   ratings?: Record<string, Rating>;
@@ -34,7 +34,7 @@ export type Blip = {
   x: number;
   y: number;
   r: number;
-  rate: number; // 0..1 share of maydays rescued
+  rate: number; // 0..1 share of stop signals rescued
   color: string;
 };
 

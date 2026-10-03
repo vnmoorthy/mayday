@@ -1,4 +1,4 @@
-// One-time Stripe setup for Mayday (test mode): the billing meter, the product
+// One-time Stripe setup for Pioneer (test mode): the billing meter, the product
 // and the metered price that "pay per rescue" runs on.
 //
 //   node --env-file=.env.local scripts/stripe-setup.mjs
@@ -9,7 +9,7 @@ import Stripe from "stripe";
 
 const EVENT_NAME = process.env.STRIPE_METER_EVENT_NAME?.trim() || "mayday_rescue";
 const PRODUCT_ID = "mayday_rescue";
-const PRODUCT_NAME = "Mayday rescue";
+const PRODUCT_NAME = "Pioneer rescue";
 const LOOKUP_KEY = "mayday_rescue_v1";
 const RATE_CENTS = 25;
 
@@ -19,9 +19,9 @@ if (!key) {
   console.error("  node --env-file=.env.local scripts/stripe-setup.mjs");
   process.exit(1);
 }
-// Mayday bills in test mode only; refuse to create live billing objects.
+// Pioneer bills in test mode only; refuse to create live billing objects.
 if (/^(sk|rk)_live_/.test(key)) {
-  console.error("STRIPE_SECRET_KEY is a live key. Mayday runs in Stripe test mode: use a test-mode key.");
+  console.error("STRIPE_SECRET_KEY is a live key. Pioneer runs in Stripe test mode: use a test-mode key.");
   process.exit(1);
 }
 
@@ -32,7 +32,7 @@ async function ensureMeter() {
     if (meter.event_name === EVENT_NAME) return { meter, created: false };
   }
   const meter = await stripe.billing.meters.create({
-    display_name: "Mayday rescues",
+    display_name: "Pioneer rescues",
     event_name: EVENT_NAME,
     default_aggregation: { formula: "sum" },
     customer_mapping: { type: "by_id", event_payload_key: "stripe_customer_id" },
@@ -52,7 +52,7 @@ async function ensureProduct() {
   const product = await stripe.products.create({
     id: PRODUCT_ID,
     name: PRODUCT_NAME,
-    description: "One agent rescued by an official fix pinned in a Mayday tower.",
+    description: "One agent rescued by an official fix pinned in a Pioneer tower.",
     unit_label: "rescue",
   });
   return { product, created: true };

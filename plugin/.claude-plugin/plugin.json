@@ -1,7 +1,7 @@
 {
-  "name": "mayday",
+  "name": "pioneer",
   "version": "0.1.0",
-  "description": "Waze for agents. When a command fails, Mayday reports the crash site and briefs the agent with the flares earlier agents left there.",
-  "author": { "name": "Mayday" },
+  "description": "Waze for agents. When a command fails, Pioneer reports the crash site and briefs the agent with the flares earlier agents left there.",
+  "author": { "name": "Pioneer" },
   "keywords": ["errors", "debugging", "mcp", "hooks", "agents"]
 }

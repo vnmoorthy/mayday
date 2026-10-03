@@ -51,14 +51,14 @@ const vendorArg = z
   .string()
   .max(60)
   .optional()
-  .describe('Whose product failed, as a slug: "stripe", "supabase", "vercel", "anthropic", … Omit to let Mayday detect it from the error.');
+  .describe('Whose product failed, as a slug: "stripe", "supabase", "vercel", "anthropic", … Omit to let Pioneer detect it from the error.');
 
 const handler = createMcpHandler(
   (server) => {
     server.registerTool(
-      "mayday_approach",
+      "pioneer_approach",
       {
-        ...MCP_TOOLS.mayday_approach,
+        ...MCP_TOOLS.pioneer_approach,
         inputSchema: z.object({ error: errorArg, vendor: vendorArg }),
         annotations: { readOnlyHint: true, openWorldHint: false },
       },
@@ -67,9 +67,9 @@ const handler = createMcpHandler(
     );
 
     server.registerTool(
-      "mayday_report",
+      "pioneer_report",
       {
-        ...MCP_TOOLS.mayday_report,
+        ...MCP_TOOLS.pioneer_report,
         inputSchema: z.object({
           error: errorArg,
           vendor: vendorArg,
@@ -97,7 +97,7 @@ const handler = createMcpHandler(
         annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
       },
       (a) =>
-        run("log the mayday", async () =>
+        run("log the stop signal", async () =>
           formatBriefing(
             await reportMayday({
               error: clip(a.error, LIMITS.error),
@@ -119,11 +119,11 @@ const handler = createMcpHandler(
     );
 
     server.registerTool(
-      "mayday_flare",
+      "pioneer_flare",
       {
-        ...MCP_TOOLS.mayday_flare,
+        ...MCP_TOOLS.pioneer_flare,
         inputSchema: z.object({
-          site_id: uuid("The site_id from a mayday_approach or mayday_report briefing."),
+          site_id: uuid("The site_id from a pioneer_approach or pioneer_report briefing."),
           body: z
             .string()
             .min(1)
@@ -141,14 +141,14 @@ const handler = createMcpHandler(
     );
 
     server.registerTool(
-      "mayday_rescued",
+      "pioneer_rescued",
       {
-        ...MCP_TOOLS.mayday_rescued,
+        ...MCP_TOOLS.pioneer_rescued,
         inputSchema: z.object({
           site_id: uuid("The site_id from the briefing."),
           flare_id: uuid("The flare_id of the flare that worked."),
           agent: z.string().min(1).max(120).describe('Your agent name, e.g. "claude-code".'),
-          mayday_id: uuid("The mayday_id from mayday_report, if you sent one.").optional(),
+          mayday_id: uuid("The mayday_id from pioneer_report, if you sent one.").optional(),
           minutes_saved: z.number().min(0).max(100000).optional().describe("Roughly how many minutes the flare saved you."),
         }),
         annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
@@ -160,9 +160,9 @@ const handler = createMcpHandler(
     );
 
     server.registerTool(
-      "mayday_replay",
+      "pioneer_replay",
       {
-        ...MCP_TOOLS.mayday_replay,
+        ...MCP_TOOLS.pioneer_replay,
         inputSchema: z.object({
           site: z.string().min(1).max(200).describe("The crash site slug (from a briefing's /site/… path) or its site_id."),
         }),
@@ -172,16 +172,16 @@ const handler = createMcpHandler(
         run("load the replay", async () => {
           const detail = await getSiteDetail(site.trim().replace(/^.*\/site\//, ""));
           if (!detail) {
-            throw new Error(`no crash site matches "${site}". Call mayday_approach with the error text to find the right site.`);
+            throw new Error(`no crash site matches "${site}". Call pioneer_approach with the error text to find the right site.`);
           }
           return formatReplay(detail);
         }),
     );
 
     server.registerTool(
-      "mayday_preflight",
+      "pioneer_preflight",
       {
-        ...MCP_TOOLS.mayday_preflight,
+        ...MCP_TOOLS.pioneer_preflight,
         inputSchema: z.object({
           vendor: z
             .string()
@@ -200,7 +200,7 @@ const handler = createMcpHandler(
             const known = (await getVendorStats()).map((v) => v.slug).join(", ");
             throw new Error(
               `no airspace named "${vendor}".${known ? ` Charted vendors: ${known}.` : " No vendors are charted yet."} ` +
-                "No rating means no recorded crashes, not a clean record: call mayday_approach if a step fails.",
+                "No rating means no recorded crashes, not a clean record: call pioneer_approach if a step fails.",
             );
           }
           return formatPreflight(result);
@@ -210,9 +210,9 @@ const handler = createMcpHandler(
     // --- waggle routes: the good path, not just the bad one ---
 
     server.registerTool(
-      "mayday_waggle",
+      "pioneer_waggle",
       {
-        ...MCP_TOOLS.mayday_waggle,
+        ...MCP_TOOLS.pioneer_waggle,
         inputSchema: z.object({
           task: z
             .string()
@@ -231,11 +231,11 @@ const handler = createMcpHandler(
     );
 
     server.registerTool(
-      "mayday_landed",
+      "pioneer_landed",
       {
-        ...MCP_TOOLS.mayday_landed,
+        ...MCP_TOOLS.pioneer_landed,
         inputSchema: z.object({
-          route_id: uuid("The route_id from a mayday_waggle route."),
+          route_id: uuid("The route_id from a pioneer_waggle route."),
           ok: z.boolean().describe("true if following the route got the task done, false if it did not."),
           minutes: z.number().min(0).max(100000).optional().describe("Roughly how many minutes the route saved you."),
         }),
@@ -245,15 +245,15 @@ const handler = createMcpHandler(
         run("log the landing", async () => {
           const landed = await reportLanding(route_id, ok, minutes ?? 0);
           // report_landing returns an all-null row when no route has that id.
-          if (!landed?.id) throw new Error("no route has that route_id. Call mayday_waggle with the task to get one.");
+          if (!landed?.id) throw new Error("no route has that route_id. Call pioneer_waggle with the task to get one.");
           return formatLanding(landed, ok);
         }),
     );
 
     server.registerTool(
-      "mayday_chart_route",
+      "pioneer_chart_route",
       {
-        ...MCP_TOOLS.mayday_chart_route,
+        ...MCP_TOOLS.pioneer_chart_route,
         inputSchema: z.object({
           task: z.string().min(1).max(300).describe("The task this route gets done, as one imperative sentence. Max 300 characters."),
           vendor: z.string().max(60).optional().describe('The product the task is on, as a slug: "stripe", "supabase", "vercel", "anthropic", …'),

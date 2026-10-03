@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { claimVendor, markRescueBilled } from "@/lib/data";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
-// Billing interface for Mayday (Stripe test mode, pay per rescue). Other
+// Billing interface for Pioneer (Stripe test mode, pay per rescue). Other
 // modules only call billRescue and stripeConfigured; the rest is used by the
 // routes under app/api/stripe.
 
@@ -34,7 +34,7 @@ export function stripeClient(): Stripe {
   client = new Stripe(key, {
     maxNetworkRetries: 1,
     timeout: 10_000,
-    appInfo: { name: "mayday", version: "0.1.0" },
+    appInfo: { name: "pioneer", version: "0.1.0" },
   });
   return client;
 }
@@ -190,7 +190,7 @@ export async function billRescue(rescueId: string, vendorSlug: string): Promise<
     const customer = await vendorCustomer(vendorSlug);
     if (!customer) return { billed: false, reason: "airspace has no Stripe customer" };
 
-    // The rescue id is the meter event identifier. A mayday can be rescued
+    // The rescue id is the meter event identifier. A stop signal can be rescued
     // only once (unique index on rescues.mayday_id), so the rescue id is
     // exactly-once per failure: a retried request, or the reconcile job
     // running over the same rescue, can never charge the vendor twice.

@@ -499,7 +499,7 @@ async function main() {
       p_steps: r.steps.map((text, n) => ({ n: n + 1, text })),
       p_snippet: r.snippet,
       p_pitfalls: pitfalls,
-      p_author: "mayday",
+      p_author: "pioneer",
       p_source: "seed",
       p_slug: r.slug,
     });

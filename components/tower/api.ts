@@ -1,4 +1,4 @@
-// Tiny fetch wrapper for the Mayday HTTP API. Errors carry the status code so
+// Tiny fetch wrapper for the Pioneer HTTP API. Errors carry the status code so
 // callers can treat 403 (unclaimed airspace) differently from a plain failure.
 
 export class ApiError extends Error {
@@ -22,7 +22,7 @@ export async function api<T>(url: string, body?: unknown, signal?: AbortSignal):
     });
   } catch (e) {
     if (e instanceof DOMException && e.name === "AbortError") throw e;
-    throw new ApiError("Could not reach Mayday. Check your connection and try again.", 0);
+    throw new ApiError("Could not reach Pioneer. Check your connection and try again.", 0);
   }
   const data: unknown = await res.json().catch(() => null);
   if (!res.ok) {

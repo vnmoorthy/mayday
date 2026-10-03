@@ -1,5 +1,5 @@
 -- Flight log: every hosted test flight (a real model flying a scenario, with
--- or without Mayday) leaves one row, so the comparison between flying alone
+-- or without Pioneer) leaves one row, so the comparison between flying alone
 -- and flying with the hive is measured, not claimed.
 create table public.flights (
   id               uuid primary key default gen_random_uuid(),

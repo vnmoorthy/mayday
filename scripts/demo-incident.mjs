@@ -1,7 +1,7 @@
 // Simulates the thing no model can know: a HivePay release that shipped ten
 // minutes ago and breaks every agent that calls payouts.create(). It reports
-// a burst of maydays from differently named agents and then asks Mayday
-// whether the spike was detected. HivePay is Mayday's own fictional vendor.
+// a burst of stop signals from differently named agents and then asks Pioneer
+// whether the spike was detected. HivePay is Pioneer's own fictional vendor.
 //
 //   node --env-file=.env.local scripts/demo-incident.mjs [--count 8] [--delay 400] [--url https://your-deployment]
 //
@@ -35,7 +35,7 @@ function numberOption(name, fallback, min, max) {
   return Math.round(n);
 }
 
-const BASE = (option("url") || process.env.MAYDAY_URL || "http://localhost:3000").replace(/\/+$/, "");
+const BASE = (option("url") || process.env.PIONEER_URL || "http://localhost:3000").replace(/\/+$/, "");
 const COUNT = numberOption("count", 8, 1, 200);
 const DELAY = numberOption("delay", 400, 0, 60_000);
 
@@ -57,20 +57,20 @@ async function call(path, body) {
 const why = (r) => r.json?.error || r.text.slice(0, 160) || `status ${r.status}`;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-console.log(`HivePay incident against ${BASE}: ${COUNT} mayday${COUNT === 1 ? "" : "s"}, ${DELAY}ms apart\n`);
+console.log(`HivePay incident against ${BASE}: ${COUNT} stop signal${COUNT === 1 ? "" : "s"}, ${DELAY}ms apart\n`);
 
 // Read-only check first: if this error would land on some other crash site,
 // stop before writing anything to it.
 const near = await call("/api/v1/approach", { error: ERROR, vendor: VENDOR });
 if (near.status !== 200) {
-  console.error(`Could not reach Mayday: ${why(near)}`);
+  console.error(`Could not reach Pioneer: ${why(near)}`);
   process.exit(1);
 }
 if (near.json?.known && near.json.site && !String(near.json.site.sample_error).includes(CODE)) {
   console.error(`Stopped: this error would match the existing crash site "${near.json.site.slug}", which is not the ${CODE} site. Nothing was written.`);
   process.exit(1);
 }
-console.log(near.json?.known ? `Crash site already open (${near.json.site.slug}); adding to it.` : "No crash site for this error yet: the first mayday opens it.");
+console.log(near.json?.known ? `Crash site already open (${near.json.site.slug}); adding to it.` : "No crash site for this error yet: the first stop signal opens it.");
 
 const run = Date.now().toString(36);
 let sent = 0;
@@ -96,7 +96,7 @@ for (let i = 0; i < COUNT; i++) {
   if (r.status !== 201 || !r.json?.site) {
     console.log(`  ${String(i + 1).padStart(2)}/${COUNT}  ${agent.padEnd(14)} FAIL  ${why(r)}`);
   } else if (!String(r.json.site.sample_error).includes(CODE)) {
-    console.error(`  Stopped: mayday ${i + 1} landed on "${r.json.site.slug}", which is not the ${CODE} site.`);
+    console.error(`  Stopped: stop signal ${i + 1} landed on "${r.json.site.slug}", which is not the ${CODE} site.`);
     process.exit(1);
   } else {
     sent += 1;
@@ -111,7 +111,7 @@ for (let i = 0; i < COUNT; i++) {
 }
 
 if (!site) {
-  console.error("\nNo mayday was accepted, so there is nothing to detect.");
+  console.error("\nNo stop signal was accepted, so there is nothing to detect.");
   process.exit(1);
 }
 
@@ -123,14 +123,14 @@ if (inc.status !== 200) {
 const incident = (inc.json.incidents ?? []).find((x) => x.site_id === site.id || x.slug === site.slug);
 const windowMinutes = inc.json.window_minutes ?? 30;
 
-console.log(`\nReported ${sent}/${COUNT} maydays to ${site.slug}.`);
+console.log(`\nReported ${sent}/${COUNT} stop signals to ${site.slug}.`);
 if (incident) {
   console.log(
-    `Spike DETECTED: ${incident.recent} maydays in the last ${windowMinutes} minutes · baseline ${incident.baseline} per window · ratio ${incident.ratio}x`,
+    `Spike DETECTED: ${incident.recent} stop signals in the last ${windowMinutes} minutes · baseline ${incident.baseline} per window · ratio ${incident.ratio}x`,
   );
 } else {
   console.log(
-    `Spike NOT detected. An incident needs at least 3 maydays in ${windowMinutes} minutes and 3 times the site's own baseline` +
+    `Spike NOT detected. An incident needs at least 3 stop signals in ${windowMinutes} minutes and 3 times the site's own baseline` +
       `${sent < 3 ? `; this run sent ${sent}` : ""}.`,
   );
 }

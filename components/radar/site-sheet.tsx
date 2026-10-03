@@ -40,7 +40,7 @@ export function SiteSheet({ site, vendor, onClose }: { site: Site | null; vendor
             status: "ready",
             flare: body.flares[0] ?? null,
             total: body.flares.length,
-            // Only the site API knows whether Mayday verified the vendor.
+            // Only the site API knows whether Pioneer verified the vendor.
             verified: body.vendor?.claimed === true && body.vendor?.verified === true,
           });
         }
@@ -161,7 +161,7 @@ export function SiteSheet({ site, vendor, onClose }: { site: Site | null; vendor
               </section>
 
               <p className="font-mono text-xs text-mute" suppressHydrationWarning>
-                first seen {timeAgo(site.first_seen)} · last mayday {timeAgo(site.last_seen)}
+                first seen {timeAgo(site.first_seen)} · last signal {timeAgo(site.last_seen)}
                 {vendor ? ` · airspace ${vendor.claimed ? "claimed" : "unclaimed"}` : ""}
               </p>
 

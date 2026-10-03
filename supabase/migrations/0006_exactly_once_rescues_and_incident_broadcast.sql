@@ -1,9 +1,10 @@
--- 1. A rescue is exactly-once per mayday. Confirming the same rescue twice (a
---    retried request, an agent calling twice) returns the first rescue instead
+-- 1. A rescue is exactly-once per stop signal. Confirming the same rescue twice
+--    (a retried request, an agent calling twice) returns the first rescue instead
 --    of inserting a second, so a vendor can never be billed twice for one
 --    failure. A rescue is only billable when it points at a real, recent
---    mayday on the same crash site.
--- 2. Incidents are pushed, not polled: a trigger on maydays checks the site
+--    stop signal on the same crash site.
+-- 2. Incidents are pushed, not polled: a trigger on the maydays table (where
+--    stop signals are stored) checks the site
 --    against its own baseline and broadcasts over Realtime when it spikes.
 
 delete from public.rescues r
@@ -45,7 +46,7 @@ begin
     raise exception 'flare % does not belong to crash site %', p_flare_id, p_site_id using errcode = 'P0002';
   end if;
 
-  -- Already confirmed for this mayday: hand back the first rescue, change nothing.
+  -- Already confirmed for this stop signal: hand back the first rescue, change nothing.
   if p_mayday_id is not null then
     select * into v_rescue from public.rescues where mayday_id = p_mayday_id;
     if found then
@@ -81,7 +82,7 @@ begin
                             'billable', v_billable, 'duplicate', false);
 end $$;
 
--- Broadcast a spike the moment the mayday that causes it is inserted.
+-- Broadcast a spike the moment the stop signal that causes it is inserted.
 create or replace function public.broadcast_incident()
 returns trigger
 language plpgsql security definer
@@ -104,7 +105,7 @@ begin
   end if;
   return new;
 exception when others then
-  -- A failed broadcast must never fail the mayday itself.
+  -- A failed broadcast must never fail the stop signal itself.
   return new;
 end $$;
 

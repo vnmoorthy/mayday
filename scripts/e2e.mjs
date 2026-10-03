@@ -1,4 +1,4 @@
-// End-to-end check of a running Mayday: every agent flow and every vendor
+// End-to-end check of a running Pioneer: every agent flow and every vendor
 // flow, through the public API, inside a throwaway airspace that is deleted
 // afterwards.
 //
@@ -11,7 +11,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const args = process.argv.slice(2);
 const urlArg = args.indexOf("--url");
-const BASE = (urlArg >= 0 ? args[urlArg + 1] : process.env.MAYDAY_URL || "http://localhost:3000").replace(/\/+$/, "");
+const BASE = (urlArg >= 0 ? args[urlArg + 1] : process.env.PIONEER_URL || "http://localhost:3000").replace(/\/+$/, "");
 const VENDOR = `e2e-${Date.now().toString(36)}`;
 const ERROR = `E2E_PROBE_${VENDOR.toUpperCase().replace(/-/g, "_")}: widget frobnicator refused the calibration payload`;
 
@@ -61,7 +61,7 @@ async function mcp(method, params) {
   }
 }
 
-console.log(`Mayday end-to-end check against ${BASE}\nThrowaway airspace: ${VENDOR}\n`);
+console.log(`Pioneer end-to-end check against ${BASE}\nThrowaway airspace: ${VENDOR}\n`);
 
 try {
   // --- pages -----------------------------------------------------------------
@@ -84,7 +84,7 @@ try {
   });
   const site = r.json?.site;
   const pioneerMayday = r.json?.mayday_id;
-  check("mayday: first report opens a crash site", r.status === 201 && r.json?.new_site === true && Boolean(site?.id), site?.slug);
+  check("stop signal: first report opens a crash site", r.status === 201 && r.json?.new_site === true && Boolean(site?.id), site?.slug);
 
   r = await call("/api/v1/approach", { error: `Error: ${ERROR}\n    at calibrate (app.js:10:3)` });
   check("approach: the same failure in different words finds the site", r.json?.known === true && r.json?.site?.id === site?.id);
@@ -95,7 +95,7 @@ try {
 
   r = await call("/api/v1/mayday", { error: ERROR, vendor: VENDOR, agent: "e2e-follower", minutes_lost: 1 });
   const followerMayday = r.json?.mayday_id;
-  check("mayday: the next agent is handed the pioneer's flare", r.json?.new_site === false && r.json?.flares?.[0]?.id === agentFlare?.id, `${r.json?.site?.maydays_count} agents down`);
+  check("stop signal: the next agent is handed the pioneer's flare", r.json?.new_site === false && r.json?.flares?.[0]?.id === agentFlare?.id, `${r.json?.site?.maydays_count} agents down`);
 
   r = await call("/api/v1/rescue", { site_id: site.id, flare_id: agentFlare.id, agent: "e2e-follower", mayday_id: followerMayday, minutes_saved: 4 });
   check("rescue: confirmed, and not billable for an agent flare", r.status === 200 && r.json?.billable === false);
@@ -131,7 +131,7 @@ try {
   check("rescue by an official fix is billable", r.status === 200 && r.json?.billable === true, r.json?.billed ? "billed to Stripe" : `not sent to Stripe (${claimMode === "demo" ? "demo billing mode" : r.json?.billing_note ?? "no customer"})`);
 
   const again = await call("/api/v1/rescue", { site_id: site.id, flare_id: official.id, agent: "e2e-third", mayday_id: thirdMayday, minutes_saved: 5 });
-  check("rescue is exactly-once: confirming the same mayday twice does not bill twice", again.status === 200 && again.json?.duplicate === true && again.json?.rescue?.id === r.json?.rescue?.id);
+  check("rescue is exactly-once: confirming the same stop signal twice does not bill twice", again.status === 200 && again.json?.duplicate === true && again.json?.rescue?.id === r.json?.rescue?.id);
 
   r = await call(`/api/v1/billing/${VENDOR}`);
   check("billing: one billable rescue at the per-rescue rate", r.status === 200 && r.json?.billable_rescues === 1 && r.json?.amount_due_cents === r.json?.rate_cents);
@@ -146,7 +146,7 @@ try {
   check("pitfalls feed: plain text any agent can read, inside the untrusted envelope", r.status === 200 && r.text.includes("VENDOR-PINNED FIX") && /untrusted/i.test(r.text) && r.text.includes(site.title.slice(0, 20)));
 
   r = await call(`/api/v1/incidents?vendor=${VENDOR}`);
-  check("incidents: three maydays in minutes is flagged as a spike", r.status === 200 && r.json?.incidents?.some((i) => i.site_id === site.id), `${r.json?.incidents?.[0]?.recent ?? 0} recent, ${r.json?.incidents?.[0]?.ratio ?? "?"}x baseline`);
+  check("incidents: three stop signals in minutes is flagged as a spike", r.status === 200 && r.json?.incidents?.some((i) => i.site_id === site.id), `${r.json?.incidents?.[0]?.recent ?? 0} recent, ${r.json?.incidents?.[0]?.ratio ?? "?"}x baseline`);
 
   r = await call("/api/v1/draft-fix", { site: site.slug });
   check("drafted fix: a model drafts an official fix for review", r.status === 200 ? Boolean(r.json?.body) : r.status === 503, r.status === 200 ? `by ${r.json.model}` : `no model access: ${String(r.json?.error).slice(0, 80)}`);
@@ -172,11 +172,11 @@ try {
   // --- MCP ---------------------------------------------------------------------
   const list = await mcp("tools/list", {});
   const tools = (list.result?.tools ?? []).map((t) => t.name);
-  check("MCP: nine tools listed", tools.length >= 9 && ["mayday_report", "mayday_approach", "mayday_preflight", "mayday_waggle"].every((t) => tools.includes(t)), tools.join(", "));
+  check("MCP: nine tools listed", tools.length >= 9 && ["pioneer_report", "pioneer_approach", "pioneer_preflight", "pioneer_waggle"].every((t) => tools.includes(t)), tools.join(", "));
 
-  const tool = await mcp("tools/call", { name: "mayday_approach", arguments: { error: ERROR, vendor: VENDOR } });
+  const tool = await mcp("tools/call", { name: "pioneer_approach", arguments: { error: ERROR, vendor: VENDOR } });
   const out = tool.result?.content?.[0]?.text ?? "";
-  check("MCP: mayday_approach returns a briefing wrapped as untrusted content", /VENDOR-PINNED FIX/i.test(out) && /untrusted/i.test(out) && out.includes(site.id));
+  check("MCP: pioneer_approach returns a briefing wrapped as untrusted content", /VENDOR-PINNED FIX/i.test(out) && /untrusted/i.test(out) && out.includes(site.id));
 
   // --- matching, explained -----------------------------------------------------------
   r = await call("/api/v1/explain", { error: 'new row violates row-level security policy for table "orders"' });

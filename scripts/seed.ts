@@ -1,5 +1,5 @@
 // Charts the known airspace: loads scripts/seed-data.ts into Supabase and
-// generates the seeded maydays and rescues around each crash site.
+// generates the seeded stop signals and rescues around each crash site.
 //
 //   node --env-file=.env.local scripts/seed.ts             add whatever is missing
 //   node --env-file=.env.local scripts/seed.ts --reset     remove seeded rows, then reseed
@@ -137,7 +137,7 @@ function planSite(site: SeedSite, siteId: string, now: number): SitePlan {
   const rand = mulberry32(hashSeed(site.slug));
   const int = (lo: number, hi: number) => lo + Math.floor(rand() * (hi - lo + 1));
 
-  // Ages of the maydays. The first sighting is about two weeks back; roughly
+  // Ages of the stop signals. The first sighting is about two weeks back; roughly
   // four in ten land in the last 48 hours, thicker towards now.
   const ages: number[] = [];
   for (let i = 0; i < site.weight; i++) {
@@ -172,7 +172,7 @@ function planSite(site: SeedSite, siteId: string, now: number): SitePlan {
     };
   });
 
-  // Rescues: 35-70% of maydays, only ones sent after the top flare existed.
+  // Rescues: 35-70% of stop signals, only ones sent after the top flare existed.
   const eligible = times.map((_, i) => i).filter((i) => times[i] > topFlareAt);
   for (let i = eligible.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
@@ -241,7 +241,7 @@ function validate(): void {
     signatures.set(signature, s.slug);
     total += s.weight;
   }
-  if (total >= MAX_MAYDAYS) throw new Error(`seed-data: ${total} maydays, keep it under ${MAX_MAYDAYS}`);
+  if (total >= MAX_MAYDAYS) throw new Error(`seed-data: ${total} stop signals, keep it under ${MAX_MAYDAYS}`);
 }
 
 // --- database ---------------------------------------------------------------
@@ -359,7 +359,7 @@ async function recount(db: SupabaseClient, siteIds: string[]): Promise<Map<strin
 function printTable(rows: { vendor: string; sites: number; maydays: number; rescues: number; minutes: number }[]): void {
   const line = (cells: (string | number)[]) =>
     `  ${String(cells[0]).padEnd(12)}${cells.slice(1).map((c) => String(c).padStart(10)).join("")}`;
-  console.log(line(["airspace", "sites", "maydays", "rescues", "min lost"]));
+  console.log(line(["airspace", "sites", "signals", "rescues", "min lost"]));
   for (const r of rows) console.log(line([r.vendor, r.sites, r.maydays, r.rescues, r.minutes]));
   const sum = (key: "sites" | "maydays" | "rescues" | "minutes") => rows.reduce((n, r) => n + r[key], 0);
   console.log(line(["total", sum("sites"), sum("maydays"), sum("rescues"), sum("minutes")]));
@@ -447,7 +447,7 @@ async function main(): Promise<void> {
     return planSite(s, id, now);
   });
 
-  // Order matters: rescues reference both flares and maydays.
+  // Order matters: rescues reference both flares and stop signals.
   const flares = await insertMissing(db, "flares", plans.flatMap((p) => p.flares));
   const maydays = await insertMissing(db, "maydays", plans.flatMap((p) => p.maydays));
   const rescues = await insertMissing(db, "rescues", plans.flatMap((p) => p.rescues));
@@ -455,7 +455,7 @@ async function main(): Promise<void> {
   const totals = await recount(db, [...idBySlug.values()]);
 
   console.log(`Charted ${seedVendors.length} airspaces and ${seedSites.length} crash sites (source = seed).`);
-  console.log(`New rows this run: ${flares} flares, ${maydays} maydays, ${rescues} rescues.`);
+  console.log(`New rows this run: ${flares} flares, ${maydays} stop signals, ${rescues} rescues.`);
   if (flares + maydays + rescues === 0) console.log("Everything was already in place. Use --reset to reseed from scratch.");
   console.log("\nCounters now on the map (seeded and live rows together):\n");
   printTable(

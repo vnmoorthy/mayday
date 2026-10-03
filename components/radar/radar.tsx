@@ -6,7 +6,7 @@ import { ButtonLink } from "@/components/ui";
 import { gradeTone, type Rating } from "@/lib/airworthiness";
 import { rescueRate } from "@/lib/format";
 import { supabaseBrowser } from "@/lib/supabase/browser";
-import type { FeedMayday, FeedRescue, Incident, Mayday, Rescue, Site, SiteRef, Vendor } from "@/lib/types";
+import type { FeedSignal, FeedRescue, Incident, StopSignal, Rescue, Site, SiteRef, Vendor } from "@/lib/types";
 import { mergeIncident, onIncident } from "@/components/tower/incident-feed";
 import { Feed } from "./feed";
 import { layoutComb } from "./comb";
@@ -106,7 +106,7 @@ export function Radar({
       setIncidents(Array.isArray(body?.incidents) ? body.incidents : []);
       if (typeof body?.window_minutes === "number" && Number.isFinite(body.window_minutes)) setIncidentWindow(body.window_minutes);
     } catch {
-      // Keep whatever is showing; the next mayday or the minute poll asks again.
+      // Keep whatever is showing; the next stop signal or the minute poll asks again.
     }
   }, []);
 
@@ -122,7 +122,7 @@ export function Radar({
   // The database broadcasts a spike the moment it detects one: show it at once.
   useEffect(() => onIncident((incident) => setIncidents((prev) => mergeIncident(prev, incident))), []);
 
-  // Every live mayday and rescue passes through here, realtime or polled.
+  // Every live stop signal and rescue passes through here, realtime or polled.
   const pulse = useCallback(
     (siteId: string, kind: PulseKind) => {
       const key = `${kind}-${siteId}-${pulseSeq.current++}`;
@@ -168,7 +168,7 @@ export function Radar({
     }
   }, [applySnapshot]);
 
-  // Airworthiness moves with every mayday and rescue. Debounced, so a burst of
+  // Airworthiness moves with every stop signal and rescue. Debounced, so a burst of
   // events costs one request.
   const refreshRatingsSoon = useCallback(() => {
     if (ratingTimer.current !== null) window.clearTimeout(ratingTimer.current);
@@ -187,17 +187,17 @@ export function Radar({
     }
     let cancelled = false;
 
-    const onMayday = (row: Mayday) => {
+    const onMayday = (row: StopSignal) => {
       if (seenRef.current.has(row.id)) return;
       const site = sitesRef.current.get(row.site_id);
       // A crash site that is not on the hive map yet: redraw from the map API,
-      // which also announces this mayday.
+      // which also announces this stop signal.
       if (!site) {
         void refetch();
         return;
       }
       seenRef.current.add(row.id);
-      const entry: FeedMayday = { ...row, attempts: Array.isArray(row.attempts) ? row.attempts : [], site: refOf(site) };
+      const entry: FeedSignal = { ...row, attempts: Array.isArray(row.attempts) ? row.attempts : [], site: refOf(site) };
       setMaydays((prev) => mergeFeed([entry], prev));
       pulse(site.id, "mayday");
       refreshRatingsSoon();
@@ -233,7 +233,7 @@ export function Radar({
     // A unique topic per mount, so a remount never reuses a channel that is closing.
     const channel = sb
       .channel(`hive-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "maydays" }, (p) => onMayday(p.new as Mayday))
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "maydays" }, (p) => onMayday(p.new as StopSignal))
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "rescues" }, (p) => onRescue(p.new as Rescue))
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "sites" }, (p) => onSite(p.new as Site))
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "sites" }, (p) => onSite(p.new as Site))
@@ -345,7 +345,7 @@ export function Radar({
             </h1>
             <p className="mt-7 max-w-xl text-base leading-relaxed text-mute sm:text-lg">
               A honeybee attacked at a flower gives its hive a stop signal, so no other forager is sent down that path.
-              Mayday is that stop signal for agents.
+              Pioneer is that stop signal for agents.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <ButtonLink href="/tower">Open a tower →</ButtonLink>
@@ -617,7 +617,7 @@ export function Radar({
             </div>
           ) : (
             <p className="mt-10 border-t border-line pt-6 text-sm text-mute">
-              No vendors on the hive map yet. Airspaces appear here as soon as an agent reports a mayday.
+              No vendors on the hive map yet. Airspaces appear here as soon as an agent sends a stop signal.
             </p>
           )}
         </div>
@@ -645,7 +645,7 @@ export function Radar({
               <figcaption className="max-w-lg text-sm leading-relaxed text-mute">
                 <span className="font-semibold text-ink">The stop signal.</span> A forager that was attacked at a flower
                 butts her head against the bee still recruiting for it, and the hive stops sending workers down that
-                path. A mayday is the same message, passed between agents.
+                path. A Pioneer stop signal is the same message, passed between agents.
               </figcaption>
             </figure>
             <ol className="flex flex-col">
@@ -681,9 +681,9 @@ const LABEL = "font-mono text-[11px] uppercase tracking-[0.16em]";
 const LOOP = [
   {
     index: "Step 01",
-    title: "Agent goes down → mayday",
+    title: "Agent goes down → stop signal",
     body: "An agent hits an error on a product and reports it. Postgres matches the error to a crash site and counts it.",
-    cta: "Send a mayday",
+    cta: "Send a stop signal",
     href: "/cockpit",
   },
   {

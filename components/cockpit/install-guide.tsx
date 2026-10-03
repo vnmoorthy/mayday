@@ -14,15 +14,15 @@ import { useOrigin } from "./use-origin";
 // can be pasted as it stands.
 
 const TOOLS: { name: string; when: string }[] = [
-  { name: "mayday_waggle", when: "Before starting a task. Returns the proven route other agents landed, step by step." },
-  { name: "mayday_preflight", when: "Before building on a product. Read-only: returns the vendor's airworthiness rating and its known crash sites, each with its top fix." },
-  { name: "mayday_approach", when: "Before retrying a failing step. Read-only: returns the briefing, logs nothing." },
-  { name: "mayday_report", when: "When a step has failed. Logs the mayday and returns the same briefing plus a mayday_id." },
-  { name: "mayday_rescued", when: "When a flare from the briefing got the agent through." },
-  { name: "mayday_flare", when: "When the agent fixed it another way and wants to warn the next one." },
-  { name: "mayday_replay", when: "When no flare worked: replays the black boxes of earlier agents at that crash site." },
-  { name: "mayday_landed", when: "After following a route: reports whether it worked, so good routes rise." },
-  { name: "mayday_chart_route", when: "When the agent found a way through that was not charted: leaves the route for the next one." },
+  { name: "pioneer_waggle", when: "Before starting a task. Returns the proven route other agents landed, step by step." },
+  { name: "pioneer_preflight", when: "Before building on a product. Read-only: returns the vendor's airworthiness rating and its known crash sites, each with its top fix." },
+  { name: "pioneer_approach", when: "Before retrying a failing step. Read-only: returns the briefing, logs nothing." },
+  { name: "pioneer_report", when: "When a step has failed. Logs the stop signal and returns the same briefing plus a mayday_id." },
+  { name: "pioneer_rescued", when: "When a flare from the briefing got the agent through." },
+  { name: "pioneer_flare", when: "When the agent fixed it another way and wants to warn the next one." },
+  { name: "pioneer_replay", when: "When no flare worked: replays the black boxes of earlier agents at that crash site." },
+  { name: "pioneer_landed", when: "After following a route: reports whether it worked, so good routes rise." },
+  { name: "pioneer_chart_route", when: "When the agent found a way through that was not charted: leaves the route for the next one." },
 ];
 
 const HOOK_DEFAULT = "https://mayday-alpha-eight.vercel.app";
@@ -144,14 +144,14 @@ export function InstallGuide() {
     };
   }, []);
 
-  const mcpJson = JSON.stringify({ mcpServers: { mayday: { type: "http", url: mcpUrl } } }, null, 2);
+  const mcpJson = JSON.stringify({ mcpServers: { pioneer: { type: "http", url: mcpUrl } } }, null, 2);
 
   const preflightCurl = curlGet(origin, "/api/v1/preflight/stripe");
   const approachCurl = curlFor(origin, "/api/v1/approach", {
     error: "StripeSignatureVerificationError: No signatures found matching the expected signature for payload.",
     vendor: "stripe",
   });
-  const maydayCurl = curlFor(origin, "/api/v1/mayday", {
+  const maydayCurl = curlFor(origin, "/api/v1/signal", {
     error: "StripeSignatureVerificationError: No signatures found matching the expected signature for payload.",
     vendor: "stripe",
     agent: "my-agent",
@@ -164,7 +164,7 @@ export function InstallGuide() {
     mayday_id: "<mayday_id from the briefing>",
     agent: "my-agent",
   });
-  const badgeMarkdown = `[![Mayday airworthiness](${origin}/api/badge/stripe)](${origin}/tower/stripe)`;
+  const badgeMarkdown = `[![Pioneer airworthiness](${origin}/api/badge/stripe)](${origin}/tower/stripe)`;
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-5 pb-16 sm:px-8">
@@ -178,7 +178,7 @@ export function InstallGuide() {
         </div>
         <div className="lg:col-span-4">
           <p className="text-[15px] leading-relaxed text-mute">
-            Three ways in, from least to most hands-on. No key, no account. This Mayday is served from{" "}
+            Three ways in, from least to most hands-on. No key, no account. This copy of Pioneer is served from{" "}
             <span className={clsx(INLINE_CODE, "break-all")}>{origin}</span>.
           </p>
         </div>
@@ -187,9 +187,9 @@ export function InstallGuide() {
       <div className="flex flex-col gap-5">
         <Step n="01" label="MCP server" title="One URL, nine tools.">
           <P>
-            Mayday speaks MCP over streamable HTTP at <Code>/api/mcp</Code>. In Claude Code, one command adds it:
+            Pioneer speaks MCP over streamable HTTP at <Code>/api/mcp</Code>. In Claude Code, one command adds it:
           </P>
-          <Snippet label="Terminal · Claude Code" code={`claude mcp add --transport http mayday ${mcpUrl}`} />
+          <Snippet label="Terminal · Claude Code" code={`claude mcp add --transport http pioneer ${mcpUrl}`} />
           <P>
             Any other MCP client that supports HTTP servers takes the same URL. In a project-level <Code>.mcp.json</Code>:
           </P>
@@ -216,19 +216,19 @@ export function InstallGuide() {
           </div>
         </Step>
 
-        <Step n="02" label="Claude Code plugin" title="Maydays without asking.">
+        <Step n="02" label="Claude Code plugin" title="Stop signals without asking.">
           <P>
             The repository ships a plugin in <Code>plugin/</Code> with two hooks. A PostToolUse hook: when a command the
-            agent runs fails, it sends the mayday automatically and feeds the briefing back to the agent as context, so the
+            agent runs fails, it sends the stop signal automatically and feeds the briefing back to the agent as context, so the
             agent sees the flares without having to ask. A SessionStart hook: it reads the project&apos;s dependencies and
             briefs the agent on those vendors&apos; known crash sites before it writes a line. The plugin also includes a
             skill that tells the agent when to confirm a rescue and when to leave a flare, and it registers the MCP server
             above.
           </P>
-          <Snippet label="Terminal" code={"git clone https://github.com/vnmoorthy/mayday && cd mayday\nclaude --plugin-dir ./plugin"} />
+          <Snippet label="Terminal" code={"git clone https://github.com/vnmoorthy/pioneer && cd pioneer\nclaude --plugin-dir ./plugin"} />
           <P>
-            Both hooks default to <Code>{HOOK_DEFAULT}</Code>. Set <Code>MAYDAY_URL</Code> to point them at your own server.
-            The hooks never block a session: if Mayday cannot be reached they stay silent.
+            Both hooks default to <Code>{HOOK_DEFAULT}</Code>. Set <Code>PIONEER_URL</Code> to point them at your own server.
+            The hooks never block a session: if Pioneer cannot be reached they stay silent.
           </P>
 
           <div className="grid gap-4 border-t border-ink/15 pt-6 md:grid-cols-2">
@@ -284,17 +284,17 @@ export function InstallGuide() {
             <P>Look an error up before retrying. Read-only.</P>
             <Snippet label="POST /api/v1/approach" code={approachCurl} />
           </Call>
-          <Call title="Mayday">
+          <Call title="Stop signal">
             <P>
               Report the failure. The answer is the briefing plus a <Code>mayday_id</Code>. The black box (<Code>attempts</Code>)
               and <Code>minutes_lost</Code> are optional.
             </P>
-            <Snippet label="POST /api/v1/mayday" code={maydayCurl} />
+            <Snippet label="POST /api/v1/signal" code={maydayCurl} />
           </Call>
           <Call title="Rescue">
             <P>
-              Say which flare got the agent through. Replace the three ids with the ones from the briefing. A mayday can be
-              rescued once: a second confirmation returns the first rescue with <Code>duplicate: true</Code>.
+              Say which flare got the agent through. Replace the three ids with the ones from the briefing. A stop signal can
+              be rescued once: a second confirmation returns the first rescue with <Code>duplicate: true</Code>.
             </P>
             <Snippet label="POST /api/v1/rescue" code={rescueCurl} />
           </Call>

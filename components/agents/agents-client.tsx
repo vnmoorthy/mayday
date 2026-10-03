@@ -193,7 +193,7 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
           </button>
         </div>
         <p className="text-sm leading-relaxed text-mute lg:col-span-8">
-          <strong className="font-semibold text-ink">Most of this page is charted, not observed.</strong> The bulk of the maydays
+          <strong className="font-semibold text-ink">Most of this page is charted, not observed.</strong> The bulk of the stop signals
           here were charted from known failure patterns for each vendor.{" "}
           <span className="tabular text-ink">
             {all.live.toLocaleString()} of {all.maydays.toLocaleString()}
@@ -204,7 +204,7 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
             <>
               {" "}
               <strong className="font-semibold text-ink">
-                Live only is on: you are seeing mayday counts and nothing else.
+                Live only is on: you are seeing stop-signal counts and nothing else.
               </strong>{" "}
               Rescues, hours lost and crash sites are not recorded per source, so they are left blank rather than guessed.
             </>
@@ -213,10 +213,10 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
       </section>
 
       <section className="rule grid grid-cols-2 gap-x-6 gap-y-10 py-10 sm:py-12 lg:grid-cols-4" aria-label="Totals">
-        <Stat label="Agents" value={data.agents.length} hint={liveOnly ? "With test-flight or live maydays" : "Distinct agent clients"} />
+        <Stat label="Agents" value={data.agents.length} hint={liveOnly ? "With test-flight or live signals" : "Distinct agent clients"} />
         <Stat label="Models" value={data.models.length} hint="Distinct model ids reported" />
         <Stat
-          label={liveOnly ? "Live maydays" : "Maydays"}
+          label={liveOnly ? "Live signals" : "Stop signals"}
           value={total.toLocaleString()}
           tone="distress"
           hint={liveOnly ? "Test flights and live traffic" : `${all.live.toLocaleString()} from test flights or live traffic`}
@@ -234,11 +234,11 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
           <div className="flex flex-col items-center gap-4 rounded-2xl border border-ink/15 bg-panel px-6 py-14 text-center">
             <Bee className="h-10 w-12 animate-hover-bee text-ink" />
             <h2 className="text-2xl !font-bold text-ink sm:text-3xl">
-              {liveOnly ? "No live maydays yet." : "No maydays on the map yet."}
+              {liveOnly ? "No live stop signals yet." : "No stop signals on the map yet."}
             </h2>
             <p className="max-w-md text-sm leading-relaxed text-mute">
               {liveOnly
-                ? "Everything on this page so far is charted from known failure patterns. Run a test flight, or point an agent at Mayday, and it will show up here."
+                ? "Everything on this page so far is charted from known failure patterns. Run a test flight, or point an agent at Pioneer, and it will show up here."
                 : "Once agents start reporting where they go down, this page breaks it out by agent, model and vendor."}
             </p>
             <div className="flex flex-wrap justify-center gap-3">
@@ -268,7 +268,7 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
               </div>
               <p className="max-w-xl text-[15px] leading-relaxed text-mute lg:col-span-6 lg:pt-8">
                 Each agent, added up across every model it runs and every vendor it touches. Click a column to sort.
-                {liveOnly ? " With live only on, the list can be sorted by agent or by mayday count." : null}
+                {liveOnly ? " With live only on, the list can be sorted by agent or by stop-signal count." : null}
               </p>
             </div>
             <div className="scroll-thin mt-10 overflow-x-auto rounded-2xl border border-ink/15 bg-panel">
@@ -279,7 +279,7 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
                       <span className="label">#</span>
                     </th>
                     <SortTh label="Agent" k="agent" sort={effSort} onSort={onSort} align="left" />
-                    <SortTh label={liveOnly ? "Live maydays" : "Maydays"} k="count" sort={effSort} onSort={onSort} />
+                    <SortTh label={liveOnly ? "Live signals" : "Stop signals"} k="count" sort={effSort} onSort={onSort} />
                     <SortTh label="Rescued" k="rescued" sort={effSort} onSort={onSort} disabled={liveOnly} />
                     <SortTh label="Rescue rate" k="rate" sort={effSort} onSort={onSort} disabled={liveOnly} className="w-[22%]" />
                     <SortTh label="Agent-hours lost" k="minutes" sort={effSort} onSort={onSort} disabled={liveOnly} />
@@ -296,7 +296,7 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
                           <span className="flex flex-wrap items-center gap-2">
                             <span className="font-mono text-[15px] font-semibold text-ink">{a.key}</span>
                             {a.live > 0 && !liveOnly ? (
-                              <Badge title={`${a.live} maydays from test flights or live traffic`}>
+                              <Badge title={`${a.live} stop signals from test flights or live traffic`}>
                                 <LiveDot className="h-1.5 w-1.5" />
                                 {a.live} live
                               </Badge>
@@ -318,7 +318,7 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
                           {liveOnly ? (
                             <div className="text-right">{dash}</div>
                           ) : (
-                            <Meter value={rate} label={`${rate}% of ${a.key} maydays were rescued`} />
+                            <Meter value={rate} label={`${rate}% of ${a.key} stop signals were rescued`} />
                           )}
                         </td>
                         <td className="tabular px-3 py-4 text-right text-ink">{liveOnly ? dash : minutesToHuman(a.minutes)}</td>
@@ -345,8 +345,8 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
                 </h2>
               </div>
               <p className="max-w-xl text-[15px] leading-relaxed text-mute lg:col-span-6 lg:pt-8">
-                One cell per agent and vendor. The darker the cell, the more maydays.{" "}
-                {liveOnly ? "The number is the count of live maydays." : "The number is the share that were rescued."} Hover or
+                One cell per agent and vendor. The darker the cell, the more stop signals.{" "}
+                {liveOnly ? "The number is the count of live stop signals." : "The number is the share that were rescued."} Hover or
                 focus a cell for exact figures; a column header opens that vendor&rsquo;s tower.
               </p>
             </div>
@@ -365,7 +365,7 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
                         {activeAgent} <span className="text-mute">×</span> {activeVendor?.name ?? activeVendorSlug}
                       </div>
                     </div>
-                    <Readout label={liveOnly ? "Live maydays" : "Maydays"} value={n(activeCell).toLocaleString()} className="text-distress" />
+                    <Readout label={liveOnly ? "Live signals" : "Stop signals"} value={n(activeCell).toLocaleString()} className="text-distress" />
                     {liveOnly ? (
                       <span className="text-xs text-mute">Rescues, hours and sites are not split by source.</span>
                     ) : (
@@ -420,7 +420,7 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
                       <tr key={a.key}>
                         <th scope="row" className="sticky left-0 z-10 max-w-44 bg-panel pr-4 text-left font-normal">
                           <span className="block truncate font-mono text-sm font-semibold text-ink">{a.key}</span>
-                          <span className="tabular block font-mono text-[11px] text-mute">{n(a).toLocaleString()} maydays</span>
+                          <span className="tabular block font-mono text-[11px] text-mute">{n(a).toLocaleString()} stop signals</span>
                         </th>
                         {data.cols.map((v) => {
                           const id = a.key + SEP + v.slug;
@@ -429,7 +429,7 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
                           if (!c || count === 0) {
                             return (
                               <td key={v.slug} className="p-0 text-center">
-                                <div className="relative mx-auto h-[76px] w-[68px]" aria-label={`${a.key} on ${v.name}: no maydays`}>
+                                <div className="relative mx-auto h-[76px] w-[68px]" aria-label={`${a.key} on ${v.name}: no stop signals`}>
                                   <span className="hex absolute inset-0 bg-ink/10" />
                                   <span className="hex absolute inset-[1.5px] bg-panel" />
                                 </div>
@@ -439,8 +439,8 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
                           const level = levelOf(count, data.cellMax);
                           const rate = rescueRate(c.maydays, c.rescued);
                           const text = liveOnly
-                            ? `${a.key} on ${v.name}: ${count} live maydays`
-                            : `${a.key} on ${v.name}: ${c.maydays} maydays, ${c.rescued} rescued (${rate}%), ${minutesToHuman(c.minutes)} lost, ${c.sites} crash sites, ${c.live} from test flights or live traffic`;
+                            ? `${a.key} on ${v.name}: ${count} live stop signals`
+                            : `${a.key} on ${v.name}: ${c.maydays} stop signals, ${c.rescued} rescued (${rate}%), ${minutesToHuman(c.minutes)} lost, ${c.sites} crash sites, ${c.live} from test flights or live traffic`;
                           const on = active === id;
                           return (
                             <td key={v.slug} className="p-0 text-center">
@@ -486,7 +486,7 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
               {/* Legend */}
               <div className="mt-5 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-ink/15 pt-4 text-xs text-mute">
                 <div className="flex items-center gap-2">
-                  <span>Fewer maydays</span>
+                  <span>Fewer stop signals</span>
                   <span className="flex items-center gap-1" aria-hidden="true">
                     {FILL.map((_, i) => (
                       <span key={i} className="hex h-5 w-[18px]" style={{ background: fillOf(i) }} />
@@ -499,15 +499,15 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
                     <span className="hex absolute inset-0 bg-ink/10" />
                     <span className="hex absolute inset-[1.5px] bg-panel" />
                   </span>
-                  <span>No maydays</span>
+                  <span>No stop signals</span>
                 </div>
                 {!liveOnly ? (
                   <div className="flex items-center gap-2">
                     <LiveDot />
-                    <span>Includes test-flight or live maydays</span>
+                    <span>Includes test-flight or live stop signals</span>
                   </div>
                 ) : null}
-                <span>{liveOnly ? "Large number: live maydays." : "Large number: rescue rate. Small number: maydays."}</span>
+                <span>{liveOnly ? "Large number: live stop signals." : "Large number: rescue rate. Small number: stop signals."}</span>
               </div>
             </div>
           </section>
@@ -522,7 +522,7 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
                 </h2>
               </div>
               <p className="max-w-xl text-[15px] leading-relaxed text-mute lg:col-span-6 lg:pt-8">
-                The same maydays, grouped by the model id the agent reported, across every agent that runs it. Agents that did
+                The same stop signals, grouped by the model id the agent reported, across every agent that runs it. Agents that did
                 not report a model are listed as <code className="font-mono text-[0.88em] text-ink">unknown</code>.
               </p>
             </div>
@@ -534,7 +534,7 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
                       <span className="label">Model id</span>
                     </th>
                     <th scope="col" className="px-3 py-4 text-right font-normal">
-                      <span className="label">{liveOnly ? "Live maydays" : "Maydays"}</span>
+                      <span className="label">{liveOnly ? "Live signals" : "Stop signals"}</span>
                     </th>
                     <th scope="col" className="w-[30%] px-3 py-4 text-right font-normal">
                       <span className="label">Rescue rate</span>
@@ -555,7 +555,7 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
                               {m.key}
                             </span>
                             {m.live > 0 && !liveOnly ? (
-                              <Badge title={`${m.live} maydays from test flights or live traffic`}>
+                              <Badge title={`${m.live} stop signals from test flights or live traffic`}>
                                 <LiveDot className="h-1.5 w-1.5" />
                                 {m.live} live
                               </Badge>
@@ -574,7 +574,7 @@ export function AgentsClient({ rows, vendors }: { rows: AgentRow[]; vendors: Ven
                           {liveOnly ? (
                             <div className="text-right">{dash}</div>
                           ) : (
-                            <Meter value={rate} label={`${rate}% of ${m.key} maydays were rescued`} />
+                            <Meter value={rate} label={`${rate}% of ${m.key} stop signals were rescued`} />
                           )}
                         </td>
                         <td className="tabular py-4 pl-3 pr-5 text-right text-ink">{liveOnly ? dash : minutesToHuman(m.minutes)}</td>

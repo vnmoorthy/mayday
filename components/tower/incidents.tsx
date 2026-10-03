@@ -146,7 +146,7 @@ export function Incidents({
             </span>
           ) : (
             <span>
-              <span className="font-semibold text-ink">No spikes in the last {windowMin} minutes.</span> Mayday watches every
+              <span className="font-semibold text-ink">No spikes in the last {windowMin} minutes.</span> Pioneer watches every
               crash site against its own baseline.
             </span>
           )}

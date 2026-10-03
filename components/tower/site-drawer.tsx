@@ -221,7 +221,7 @@ export function SiteDrawer({
                     ))}
                   </div>
                 ) : (
-                  <Empty title="No maydays recorded here yet" />
+                  <Empty title="No stop signals recorded here yet" />
                 )}
               </section>
             </>

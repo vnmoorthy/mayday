@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds deck/Mayday.pptx: the 10-slide Mayday pitch on a honey-yellow field.
+"""Builds deck/Pioneer.pptx: the 10-slide Pioneer pitch on a honey-yellow field.
 
 Near-black bold type, pill labels, one dark surface (the code panel). Slides
 1, 2 and 10 use the photographs in public/art; every other visual is drawn
@@ -26,10 +26,10 @@ from pptx.oxml.ns import qn
 from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "deck" / "Mayday.pptx"
+OUT = ROOT / "deck" / "Pioneer.pptx"
 ART = ROOT / "public" / "art"
 SITE = "https://mayday-alpha-eight.vercel.app"
-REPO = "https://github.com/vnmoorthy/mayday"
+REPO = "https://github.com/vnmoorthy/pioneer"
 ANIMATE = "--no-animations" not in sys.argv
 
 # Slide geometry, in inches. M is the page margin.
@@ -44,22 +44,22 @@ RED, HONEY, MUTE = "B80F26", "7A3F00", "54491A"
 PANEL, LINE, SOFT = "F9DB4A", "D5B319", "CCB33E"
 SANS, MONO = "Helvetica Neue", "Menlo"
 FLIGHT = ("In a real test flight today, the first agent charted a new crash site and left a fix; "
-          "the next agent got that fix from Mayday.")
+          "the next agent got that fix from Pioneer.")
 
 P_NS = "http://schemas.openxmlformats.org/presentationml/2006/main"
 
 # The final speaker notes, word for word from components/deck/notes.ts.
 NOTES = [
-    "This is Mayday, the stop signal for agents. We built it for Supabase Select, where the brief was to build something agents want. So for us, the agent is the customer.",
+    "This is Pioneer, the stop signal for agents. We built it for Supabase Select, where the brief was to build something agents want. So for us, the agent is the customer.",
     "The idea comes from honeybees. When a forager is attacked at a flower, she flies home and gives her nestmates a stop signal: don't send anyone down that path. One bee pays, and the rest of the hive doesn't.",
     "Coding agents have nothing like that. Every day they hit the same Stripe webhook error, the same Supabase row-level security wall, the same Next.js params error. Each one pays for a fix another agent already found, and the vendor never hears about it.",
     "Here's the loop. An agent goes down and sends a mayday. Postgres matches the error to a crash site. The agent gets a briefing with the fixes that worked, official fix first. When it's flying again it confirms the rescue, and that makes the best fix rise.",
-    "This is live. These numbers come straight from the production API, with charted sites marked. In a real test flight today, the first agent charted a new crash site and left a fix; the next agent got that fix from Mayday.",
+    "This is live. These numbers come straight from the production API, with charted sites marked. In a real test flight today, the first agent charted a new crash site and left a fix; the next agent got that fix from Pioneer.",
     "There's a second customer: the vendor. Every vendor gets a tower, a ranked map of where agents crash on their product. Incidents are spikes detected against each site's own baseline. Official fixes are drafted by AI from the black boxes, reviewed by the vendor, pinned at the crash site, and paid for per rescue through Stripe.",
-    "And it's not just stop signals. Bees also dance to share good routes. Agents ask Mayday for the proven route before they start, report a landing when it works, and chart new routes. The plugin also vaccinates: it briefs an agent on its project's stack before it writes a line. All of it feeds an airworthiness rating that can't be bought.",
+    "And it's not just stop signals. Bees also dance to share good routes. Agents ask Pioneer for the proven route before they start, report a landing when it works, and chart new routes. The plugin also vaccinates: it briefs an agent on its project's stack before it writes a line. All of it feeds an airworthiness rating that can't be bought.",
     "Under the hood, Postgres does the matching, row-level security is the permission model, and Realtime drives the interface. It runs on Vercel with an MCP server. Stripe handles claiming and metered billing. Claude Code agents fly the test flights. Gemini drafts the official fixes and generated the artwork. A mayday is one SQL transaction.",
-    "Vendors already spend heavily to stop developers failing on their products. Mayday lets them find the failures, fix them at the moment they happen, and prove it with a rating and a per-rescue bill. And it's useful on day one with no network: launch a test flight.",
-    "Every agent that goes down should be the last one to go down there. That's Mayday. It's live, it's open source, and you can connect your agent today. Thank you.",
+    "Vendors already spend heavily to stop developers failing on their products. Pioneer lets them find the failures, fix them at the moment they happen, and prove it with a rating and a per-rescue bill. And it's useful on day one with no network: launch a test flight.",
+    "Every agent that goes down should be the last one to go down there. That's Pioneer. It's live, it's open source, and you can connect your agent today. Thank you.",
 ]
 
 prs = Presentation()
@@ -274,7 +274,7 @@ def s01_title():
     pw = Inches(7.333)
     picture(s, ART / "hero-1600.jpg", prs.slide_width - pw, 0, pw, prs.slide_height, align="r")
     pill(s, M, 1.55, "SUPABASE SELECT 2026 HACKATHON", mark=INK)
-    title(s, "Mayday", M, 2.1, 5.2, 1.6, size=100, track=-0.045, line=0.85)
+    title(s, "Pioneer", M, 2.1, 5.2, 1.6, size=100, track=-0.045, line=0.85)
     text(s, M, 3.95, 5.2, 1.25, ["The stop signal", "for agents."], size=36, bold=True, track=-0.03, line=0.95)
     x = M
     for name in ("STOP SIGNAL", "WAGGLE DANCE", "VACCINATION"):
@@ -596,8 +596,8 @@ def main():
         build()
     for s in prs.slides:
         add_motion(s)
-    prs.core_properties.title = "Mayday: the stop signal for agents"
-    prs.core_properties.author = "Mayday"
+    prs.core_properties.title = "Pioneer: the stop signal for agents"
+    prs.core_properties.author = "Pioneer"
     prs.core_properties.subject = "Supabase Select 2026 hackathon"
     OUT.parent.mkdir(parents=True, exist_ok=True)
     prs.save(str(OUT))

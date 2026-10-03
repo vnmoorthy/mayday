@@ -6,7 +6,7 @@ export default function TowerNotFound() {
       <span className="label">404 — No tower</span>
       <h1 className="max-w-3xl text-5xl font-extrabold! text-ink sm:text-7xl">This airspace is not on the radar</h1>
       <p className="max-w-xl text-base text-mute">
-        No agent has sent a mayday for this vendor yet. An airspace appears the first time an agent goes down on the product.
+        No agent has sent a stop signal for this vendor yet. An airspace appears the first time an agent goes down on the product.
       </p>
       <div className="flex flex-wrap gap-3">
         <ButtonLink href="/tower">Browse the airspaces</ButtonLink>

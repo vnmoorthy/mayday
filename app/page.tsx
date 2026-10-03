@@ -45,7 +45,7 @@ function NotConnected({ reason }: { reason: string }) {
       </span>
       <h1 className="mt-6 max-w-[16ch] text-5xl text-ink sm:text-6xl lg:text-7xl">Not connected to Supabase.</h1>
       <p className="mt-8 max-w-xl text-base leading-relaxed text-mute">
-        The hive map reads crash sites, maydays and rescues from Postgres, and it could not reach the database. Set the
+        The hive map reads crash sites, stop signals and rescues from Postgres, and it could not reach the database. Set the
         three Supabase variables in <code className="font-mono text-ink">.env.local</code>, apply the migration, then
         reload.
       </p>

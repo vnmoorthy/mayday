@@ -39,8 +39,8 @@ export function ReplaySection({ replay }: { replay: Replay }) {
         <p className="max-w-2xl text-[15px] leading-relaxed text-mute lg:col-span-5 lg:pt-8">
           HivePay is a fictional vendor built for this flight. Its SDK refuses a payout written from its own docs, for reasons
           the docs never mention, so no model can know the answer from training. Two real agents fly{" "}
-          <code className={INLINE_CODE}>flights/hivepay-payout</code>: the pioneer goes first and reports what it hits; the
-          follower asks Mayday for the route before it starts.
+          <code className={INLINE_CODE}>flights/hivepay-payout</code>: the first agent reports what it hits; the follower asks
+          Pioneer for the route before it starts.
         </p>
       </div>
 
@@ -66,7 +66,7 @@ export function ReplaySection({ replay }: { replay: Replay }) {
         <>
           <div className={clsx(CARD, "mt-10 grid gap-x-8 gap-y-10 p-6 sm:p-8 md:grid-cols-3 lg:p-10")} aria-label="Measured in these two flights">
             <Figure
-              label="Pioneer"
+              label="First agent"
               value={replay.pioneerFails}
               tone="text-distress"
               caption={replay.pioneerLanded ? "failed check runs before landing" : "failed check runs so far; it has not charted a route yet"}
@@ -77,7 +77,7 @@ export function ReplaySection({ replay }: { replay: Replay }) {
               tone={replay.followerFlown && replay.followerFails > 0 ? "text-distress" : "text-ink"}
               caption={
                 replay.followerFlown
-                  ? `failed check ${replay.followerFails === 1 ? "run" : "runs"}${replay.routeCharted ? ", flying with the pioneer's route" : ""}`
+                  ? `failed check ${replay.followerFails === 1 ? "run" : "runs"}${replay.routeCharted ? ", flying with the first agent's route" : ""}`
                   : "has not reported yet"
               }
             />
@@ -96,11 +96,11 @@ export function ReplaySection({ replay }: { replay: Replay }) {
             follower={replay.follower}
             pioneerAgent={PIONEER}
             followerAgent={FOLLOWER}
-            pioneerWaiting="No pioneer maydays on record yet."
+            pioneerWaiting="No stop signals from the first agent on record yet."
             followerWaiting={
               replay.routeCharted
                 ? "The route is charted. The follower has not reported yet."
-                : "The follower takes off once the pioneer has charted a route."
+                : "The follower takes off once the first agent has charted a route."
             }
           />
           {replay.incomplete ? (

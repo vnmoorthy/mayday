@@ -3,7 +3,7 @@ import Link from "next/link";
 import clsx from "clsx";
 import { getRecentMaydays } from "@/lib/data";
 import { timeAgo } from "@/lib/format";
-import type { FeedMayday, Mayday } from "@/lib/types";
+import type { FeedSignal, StopSignal } from "@/lib/types";
 import { Badge, Bee, Stat } from "@/components/ui";
 import { CARD, CAP, FOCUS, H2, HEADLINE, INLINE_CODE } from "@/components/cockpit/theme";
 import { CommandBlock } from "@/components/flights/command-block";
@@ -11,16 +11,16 @@ import { getFlightScenarios } from "@/components/flights/scenarios";
 import { loadReplay } from "@/components/flights/replay-data";
 import { ReplaySection } from "@/components/flights/replay-section";
 
-// Reads scenarios from disk and maydays from Postgres on every request.
+// Reads scenarios from disk and stop signals from Postgres on every request.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Test flights — Mayday",
+  title: "Test flights — Pioneer",
   description: "Real agent runs launched on purpose to find crash sites before agents in the wild do.",
 };
 
 // Outcome is data, so it is the one coloured cell in the table.
-const OUTCOME: Record<Mayday["outcome"], { label: string; chip: string }> = {
+const OUTCOME: Record<StopSignal["outcome"], { label: string; chip: string }> = {
   down: { label: "Down", chip: "border-distress/60 bg-distress/10 text-distress" },
   rescued: { label: "Rescued", chip: "border-rescue/60 bg-rescue/10 text-rescue" },
   self_recovered: { label: "Self-recovered", chip: "border-ink/40 bg-ink/5 text-ink" },
@@ -47,8 +47,8 @@ export default async function FlightsPage() {
   const [{ scenarios, fromDisk }, replay] = await Promise.all([getFlightScenarios(), loadReplay()]);
   const first = scenarios[0]?.name ?? "stripe-webhook";
 
-  // Test-flight maydays are the ones logged with source "harvest".
-  let flights: FeedMayday[] = [];
+  // Test-flight stop signals are the ones logged with source "harvest".
+  let flights: FeedSignal[] = [];
   let dbError: string | null = null;
   try {
     flights = (await getRecentMaydays(100)).filter((m) => m.source === "harvest");
@@ -71,7 +71,7 @@ export default async function FlightsPage() {
         <div className="lg:col-span-4">
           <p className="text-[15px] leading-relaxed text-mute">
             A test flight drops a real coding agent into a small project that fails with a genuine SDK error, and records where
-            it goes down. Each one leaves a mayday at the crash site, labelled as a test flight, so the map is charted before
+            it goes down. Each one leaves a stop signal at the crash site, labelled as a test flight, so the map is charted before
             live traffic arrives.
           </p>
         </div>
@@ -84,7 +84,7 @@ export default async function FlightsPage() {
         aria-label="Test flight totals"
       >
         <Stat label="Scenarios" value={scenarios.length} hint={fromDisk ? "Read from flights/" : "Built-in list"} />
-        <Stat label="Flight maydays" value={dbError ? "–" : flights.length} tone="distress" hint="Among the last 100 maydays" />
+        <Stat label="Flight signals" value={dbError ? "–" : flights.length} tone="distress" hint="Among the last 100 stop signals" />
         <Stat label="Crash sites hit" value={dbError ? "–" : sites} />
         <Stat label="Got through" value={dbError ? "–" : rescued} tone="rescue" hint="Rescued or self-recovered" />
       </section>
@@ -114,13 +114,13 @@ export default async function FlightsPage() {
 
       <section className="border-t border-ink/15 py-14 sm:py-20" aria-labelledby="launch-heading">
         <SectionHead id="launch-heading" index="02 — Launch a flight" title="One command, from the repository root.">
-          Flights run on your machine, from the root of the Mayday repository, with the Claude Code CLI signed in. The script
+          Flights run on your machine, from the root of the Pioneer repository, with the Claude Code CLI signed in. The script
           copies the scenario to a temporary directory, runs <code className={INLINE_CODE}>claude -p</code> headlessly with a
           four minute limit, then runs the check and reports to this server.
         </SectionHead>
         <div className="mt-10 grid gap-5 lg:grid-cols-2">
           <CommandBlock
-            label="With the Mayday plugin: the agent gets briefings"
+            label="With the Pioneer plugin: the agent gets briefings"
             command={`${flightCommand(first)} --runs 3 --url http://localhost:3000`}
           />
           <CommandBlock
@@ -129,14 +129,14 @@ export default async function FlightsPage() {
           />
         </div>
         <p className="mt-5 max-w-3xl text-sm leading-relaxed text-mute">
-          Pass <code className={INLINE_CODE}>--url</code> to report to another Mayday server. With the plugin on, the hook
-          reports each failed command as it happens; otherwise the flight leaves one summary mayday.
+          Pass <code className={INLINE_CODE}>--url</code> to report to another Pioneer server. With the plugin on, the hook
+          reports each failed command as it happens; otherwise the flight leaves one summary stop signal.
         </p>
       </section>
 
       <section className="border-t border-ink/15 py-14 sm:py-20" aria-labelledby="results-heading">
-        <SectionHead id="results-heading" index="03 — Results · source: harvest" title="Recent test-flight maydays.">
-          Maydays logged by test flights. Live traffic and seeded sites are not shown here.
+        <SectionHead id="results-heading" index="03 — Results · source: harvest" title="Recent test-flight stop signals.">
+          Stop signals logged by test flights. Live traffic and seeded sites are not shown here.
         </SectionHead>
 
         {dbError ? (
@@ -151,7 +151,7 @@ export default async function FlightsPage() {
               <Bee className="h-8 w-auto animate-hover-bee text-ink" />
               <p className="mt-4 text-xl font-bold tracking-tight text-ink">No test flights recorded yet.</p>
               <p className="mt-2 max-w-md text-sm leading-relaxed text-mute">
-                Nothing is shown because nothing has flown. Launch one from the root of the repository and its mayday will
+                Nothing is shown because nothing has flown. Launch one from the root of the repository and its stop signal will
                 appear here.
               </p>
             </div>

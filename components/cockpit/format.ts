@@ -13,20 +13,20 @@ export type RescueResponse = {
   stripe_event?: string | null;
   // Why a rescue was not billed, when the API says.
   billing_note?: string | null;
-  // True when this mayday had already been confirmed: nothing was counted or billed again.
+  // True when this stop signal had already been confirmed: nothing was counted or billed again.
   duplicate?: boolean;
 };
 
 // The messages the cockpit shows for the API's refusals, word for word.
-export const DUPLICATE_RESCUE = "Already confirmed: a mayday can only be rescued, and billed, once.";
+export const DUPLICATE_RESCUE = "Already confirmed: a stop signal can only be rescued, and billed, once.";
 export const RATE_LIMITED = "Rate limit reached, try again in a minute.";
 const FLARE_REJECTED = /^Flare rejected:\s*/i;
 
-// A failed call, in the cockpit's words. `refused` marks a flare Mayday screened out.
+// A failed call, in the cockpit's words. `refused` marks a flare Pioneer screened out.
 export function failureOf(status: number | null, error: string): { title: string; body: string; refused: boolean } {
   if (status === 429) return { title: "Rate limit", body: RATE_LIMITED, refused: false };
   if (status === 422 && FLARE_REJECTED.test(error)) {
-    return { title: "Flare refused", body: `Mayday refused this flare: ${error.replace(FLARE_REJECTED, "")}`, refused: true };
+    return { title: "Flare refused", body: `Pioneer refused this flare: ${error.replace(FLARE_REJECTED, "")}`, refused: true };
   }
   return { title: "Request failed", body: error, refused: false };
 }
@@ -70,7 +70,7 @@ export function billingLine(r: Pick<RescueResponse, "vendor" | "billable" | "bil
   const who = vendorName ?? r.vendor;
   if (r.billed) return `Billed to the ${who} tower via Stripe`;
   if (r.billable) return `Billable to the ${who} tower: not sent to Stripe yet`;
-  return "Not billable: not a vendor-pinned fix in claimed airspace, or not tied to a recent mayday here";
+  return "Not billable: not a vendor-pinned fix in claimed airspace, or not tied to a recent stop signal here";
 }
 
 function localFlare(f: Flare, n: number, tower: string): string {
@@ -85,7 +85,7 @@ function localFlare(f: Flare, n: number, tower: string): string {
 export function localBriefing(b: Briefing): string {
   const out: string[] = [b.headline];
   if (!b.site) {
-    out.push("Nothing to try yet. If the step fails, call mayday_report with the same error so the next agent is warned.");
+    out.push("Nothing to try yet. If the step fails, call pioneer_report with the same error so the next agent is warned.");
     return out.join("\n\n");
   }
   const s = b.site;
@@ -93,19 +93,19 @@ export function localBriefing(b: Briefing): string {
   out.unshift(UNTRUSTED_HEADER);
   if (b.new_site) out.push("You are the first to report this: a new crash site is now on the map.");
   out.push(
-    `Crash site: ${s.title}\n${s.vendor} · ${s.surface} · ${s.maydays_count} maydays · ${s.rescues_count} rescues`,
+    `Crash site: ${s.title}\n${s.vendor} · ${s.surface} · ${s.maydays_count} stop signals · ${s.rescues_count} rescues`,
   );
   if (b.flares.length) {
     const tower = b.vendor?.name ?? s.vendor;
     out.push(`Flares, best first:\n\n${b.flares.map((f, i) => localFlare(f, i + 1, tower)).join("\n\n")}`);
   } else {
-    out.push("No flares here yet. If you get through, call mayday_flare with what worked.");
+    out.push("No flares here yet. If you get through, call pioneer_flare with what worked.");
   }
   const ids = [`site_id: ${s.id}`];
   if (b.mayday_id) ids.push(`mayday_id: ${b.mayday_id}`);
   out.push(ids.join("\n"));
   if (b.flares.length) {
-    out.push("If a flare gets you through, call mayday_rescued with the site_id and the flare_id that worked.");
+    out.push("If a flare gets you through, call pioneer_rescued with the site_id and the flare_id that worked.");
   }
   return out.join("\n\n");
 }
@@ -176,7 +176,7 @@ export function localPreflight(json: unknown, vendor = "this vendor"): string {
     const title = asStr(s.title) ?? asStr(s.slug) ?? "Untitled crash site";
     const facts = [
       asStr(s.surface),
-      asNum(s.maydays_count ?? s.maydays) !== null ? `${asNum(s.maydays_count ?? s.maydays)} maydays` : null,
+      asNum(s.maydays_count ?? s.maydays) !== null ? `${asNum(s.maydays_count ?? s.maydays)} stop signals` : null,
       asNum(s.rescues_count ?? s.rescues) !== null ? `${asNum(s.rescues_count ?? s.rescues)} rescues` : null,
     ].filter(Boolean);
     const lines = [`${i + 1}. ${title}`];

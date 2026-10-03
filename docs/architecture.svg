@@ -1,169 +1,249 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="t d">
-  <title id="t">Mayday architecture</title>
-  <desc id="d">Agents (any MCP client, the Claude Code plugin, test flights) call Mayday on Vercel (MCP server, HTTP API, data access, hive map and towers, badge, Stripe billing), which calls SQL functions in Supabase Postgres with the service role key and talks to Stripe Checkout and Billing Meters. Realtime pushes inserts back to the hive map.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="992" viewBox="0 0 1200 992" role="img" aria-labelledby="t d">
+  <title id="t">Pioneer architecture</title>
+  <desc id="d">People, the Claude Code plugin, any MCP client and test flights call Pioneer on Vercel. Everything that crosses between agents and what Pioneer returns passes the trust boundary: secrets are redacted in the hook and again on the server, dangerous flares are rejected, and everything an agent reads is wrapped as untrusted content. Pioneer on Vercel (pages and feeds, the HTTP API, the MCP server, hosted live flights flown by Gemini against the in-process HivePay SDK, data access, Stripe billing with a daily cron) calls SQL functions in Supabase Postgres with the service role key. A trigger on the maydays table broadcasts incidents over Realtime, which pushes changes back to the pages. Stripe handles Checkout, Billing Meters and the subscription webhook. Gemini flies the live flights and drafts fixes.</desc>
   <defs>
-    <pattern id="comb" width="56" height="97" patternUnits="userSpaceOnUse">
-      <path d="M28 0 56 16.2v32.3L28 64.7 0 48.5V16.2ZM28 64.7V97M0 48.5v32.3M56 48.5v32.3" fill="none" stroke="#0e0e0e" stroke-width="1"/>
-    </pattern>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
-      <path d="M0 0 10 5 0 10Z" fill="#f4f4f2"/>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 10 5 0 10Z" fill="#17130d"/>
     </marker>
     <style>
-      .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; }
-      .sect { font-size: 15px; letter-spacing: 0.16em; fill: #8f8f8a; }
-      .ttl  { font-size: 17px; letter-spacing: 0.08em; fill: #f4f4f2; }
-      .det  { font-size: 15px; fill: #8f8f8a; }
-      .lbl  { font-size: 14px; letter-spacing: 0.06em; fill: #f4f4f2; }
-      .cmd  { font-size: 14px; fill: #f4f4f2; }
-      .honey { fill: #f5a524; }
-      .box  { fill: #000000; stroke: #f4f4f2; stroke-width: 1; }
-      .group { fill: none; stroke: #343434; stroke-width: 1; }
-      .core { fill: #000000; stroke: #f5a524; stroke-width: 1.5; }
-      .wire { fill: none; stroke: #f4f4f2; stroke-width: 1.25; }
+      .mono  { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; }
+      .sect  { font-size: 12px; letter-spacing: 0.1em; fill: #17130d; font-weight: 700; }
+      .ttl   { font-size: 14px; letter-spacing: 0.06em; fill: #17130d; font-weight: 700; }
+      .det   { font-size: 13px; fill: #17130d; }
+      .sm    { font-size: 12px; fill: #17130d; }
+      .lbl   { font-size: 12px; letter-spacing: 0.04em; fill: #54491a; }
+      .honey { fill: #7a3f00; }
+      .red   { fill: #b80f26; }
+      .wax   { fill: #fff6c2; }
+      .box   { fill: #f9db4a; stroke: #17130d; stroke-width: 1.25; }
+      .core  { fill: #fff6c2; stroke: #17130d; stroke-width: 1.75; }
+      .ext   { fill: #f9db4a; stroke: #7a3f00; stroke-width: 2; }
+      .group { fill: none; stroke: #17130d; stroke-width: 1; stroke-dasharray: 5 4; }
+      .note  { fill: none; stroke: #b80f26; stroke-width: 1.25; stroke-dasharray: 4 3; }
+      .wire  { fill: none; stroke: #17130d; stroke-width: 1.5; }
+      .tag   { fill: #f6cf1b; }
     </style>
   </defs>
 
   <!-- field -->
-  <rect width="1600" height="900" fill="#000000"/>
-  <rect width="1600" height="900" fill="url(#comb)"/>
+  <rect width="1200" height="992" fill="#f6cf1b"/>
 
   <!-- header -->
-  <path d="M56 38 73 48v20L56 78 39 68V48Z" fill="#f5a524"/>
-  <text x="92" y="57" class="mono" font-size="26" letter-spacing="0.14em" fill="#f4f4f2">MAYDAY</text>
-  <text x="92" y="80" class="mono sect">ARCHITECTURE · THE STOP SIGNAL FOR AGENTS</text>
-  <line x1="40" y1="100" x2="1560" y2="100" stroke="#1f1f1f" stroke-width="1"/>
+  <path d="M40 22 55 31v18L40 58 25 49V31Z" fill="#17130d"/>
+  <text x="70" y="45" class="mono" font-size="24" font-weight="700" letter-spacing="0.12em" fill="#17130d">PIONEER</text>
+  <text x="70" y="63" class="mono lbl">ARCHITECTURE · THE STOP SIGNAL FOR AGENTS</text>
+  <text x="1176" y="45" text-anchor="end" class="mono lbl">SUPABASE · VERCEL · STRIPE · CLAUDE · GEMINI</text>
+  <line x1="24" y1="74" x2="1176" y2="74" stroke="#17130d" stroke-width="1"/>
 
-  <!-- ================= AGENTS ================= -->
-  <text x="40" y="130" class="mono sect">AGENTS</text>
+  <!-- ================= wires that cross the trust boundary (drawn first, the band sits on top) ================= -->
+  <path d="M60 203V381" class="wire" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <path d="M354 203V381" class="wire" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <path d="M648 203V381" class="wire" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <path d="M942 203V381" class="wire" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
 
-  <rect x="40" y="170" width="310" height="76" class="box"/>
-  <text x="56" y="201" class="mono ttl">ANY MCP CLIENT</text>
-  <text x="56" y="228" class="mono det">Cursor · AI SDK · eve</text>
+  <!-- ================= AGENTS AND PEOPLE ================= -->
+  <text x="24" y="96" class="mono sect">AGENTS AND PEOPLE</text>
 
-  <rect x="40" y="274" width="310" height="126" class="box"/>
-  <rect x="56" y="293" width="10" height="10" fill="#d97757"/>
-  <text x="76" y="304" class="mono ttl">CLAUDE CODE PLUGIN</text>
-  <text x="56" y="332" class="mono det">hooks/mayday-hook.mjs</text>
-  <text x="56" y="355" class="mono det">skills/mayday · .mcp.json</text>
-  <text x="56" y="378" class="mono det">failed Bash command → mayday</text>
+  <rect x="24" y="106" width="270" height="96" rx="6" class="box"/>
+  <text x="38" y="130" class="mono ttl">PEOPLE · PLAIN READERS</text>
+  <text x="38" y="150" class="mono det">vendors: tower, claim, fixes</text>
+  <text x="38" y="168" class="mono det">anyone: hive map, /live, deck</text>
+  <text x="38" y="186" class="mono det">any agent: curl /llms/x.txt</text>
 
-  <rect x="40" y="480" width="310" height="126" class="box"/>
-  <text x="56" y="510" class="mono ttl">TEST FLIGHTS</text>
-  <text x="56" y="538" class="mono det">scripts/test-flight.mjs</text>
-  <text x="56" y="561" class="mono det">trap scenarios in flights/</text>
-  <text x="56" y="584" class="mono det">source = harvest</text>
+  <rect x="318" y="106" width="270" height="96" rx="6" class="box"/>
+  <text x="332" y="130" class="mono ttl">CLAUDE CODE PLUGIN</text>
+  <text x="332" y="150" class="mono det">failure hook: redact, report</text>
+  <text x="332" y="168" class="mono det">vaccination hook at start</text>
+  <text x="332" y="186" class="mono det">skill · .mcp.json</text>
 
-  <!-- test flight launches the plugin -->
-  <path d="M120 480V401" class="wire" marker-end="url(#arrow)"/>
-  <text x="136" y="446" class="mono cmd">claude -p --plugin-dir</text>
+  <rect x="612" y="106" width="270" height="96" rx="6" class="box"/>
+  <text x="626" y="130" class="mono ttl">ANY MCP CLIENT</text>
+  <text x="626" y="150" class="mono det">9 tools, streamable HTTP</text>
+  <text x="626" y="168" class="mono det">waggle · preflight · approach</text>
+  <text x="626" y="186" class="mono det">report · rescued · flare …</text>
 
-  <!-- agents to Mayday -->
-  <path d="M350 208H589" class="wire" marker-end="url(#arrow)"/>
-  <text x="364" y="198" class="mono lbl">TOOL CALL</text>
+  <rect x="906" y="106" width="270" height="96" rx="6" class="box"/>
+  <text x="920" y="130" class="mono ttl">TEST FLIGHTS</text>
+  <text x="920" y="150" class="mono det">/live: hosted, Gemini flies</text>
+  <text x="920" y="168" class="mono det">CLI: claude -p on flights/*</text>
+  <text x="920" y="186" class="mono det">source = harvest</text>
 
-  <path d="M350 312H589" class="wire" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
-  <text x="364" y="302" class="mono lbl">FAILED COMMAND</text>
-  <text x="364" y="332" class="mono lbl" fill-opacity="0.7">BRIEFING BACK</text>
+  <!-- what travels on each wire -->
+  <text x="72" y="220" class="mono lbl">IN  claim · pin a fix</text>
+  <text x="72" y="236" class="mono lbl">OUT pages and feeds</text>
+  <text x="366" y="220" class="mono lbl">IN  failed command · deps</text>
+  <text x="366" y="236" class="mono lbl">OUT briefing in context</text>
+  <text x="660" y="220" class="mono lbl">IN  tool call</text>
+  <text x="660" y="236" class="mono lbl">OUT text to act on</text>
+  <text x="954" y="220" class="mono lbl">IN  POST { mode }</text>
+  <text x="954" y="236" class="mono lbl">OUT NDJSON stream of steps</text>
 
-  <path d="M350 548H530V338H589" class="wire" marker-end="url(#arrow)"/>
-  <text x="364" y="538" class="mono lbl">HARVEST SUMMARY</text>
+  <!-- ================= TRUST BOUNDARY ================= -->
+  <rect x="24" y="246" width="1152" height="84" rx="6" fill="#fff6c2" stroke="#b80f26" stroke-width="2"/>
+  <path d="M30 246H206V330H30A6 6 0 0 1 24 324V252A6 6 0 0 1 30 246Z" fill="#b80f26"/>
+  <text x="115" y="280" text-anchor="middle" class="mono" font-size="15" font-weight="700" letter-spacing="0.08em" fill="#fff6c2">TRUST BOUNDARY</text>
+  <text x="115" y="302" text-anchor="middle" class="mono" font-size="12" fill="#fff6c2">lib/redact.ts</text>
 
-  <!-- ================= MAYDAY ON VERCEL ================= -->
-  <rect x="570" y="113" width="10" height="10" fill="#e6edf3"/>
-  <text x="590" y="130" class="mono sect honey">MAYDAY ON VERCEL · NEXT.JS 16</text>
-  <rect x="570" y="146" width="400" height="644" fill="none" stroke="#f5a524" stroke-width="1"/>
+  <text x="222" y="270" class="mono sect red">IN · WHAT AGENTS SEND</text>
+  <text x="222" y="292" class="mono det">secrets redacted in the hook, then on the server</text>
+  <text x="222" y="312" class="mono det">flares that read like an attack are rejected</text>
 
-  <rect x="590" y="170" width="310" height="76" class="box"/>
-  <text x="606" y="201" class="mono ttl">MCP SERVER</text>
-  <text x="606" y="228" class="mono det">/api/mcp · 6 tools</text>
+  <line x1="696" y1="258" x2="696" y2="318" stroke="#b80f26" stroke-width="1" stroke-dasharray="3 3"/>
 
-  <rect x="590" y="274" width="310" height="76" class="box"/>
-  <text x="606" y="305" class="mono ttl">HTTP API</text>
-  <text x="606" y="332" class="mono det">/api/v1/* · zod validation</text>
+  <text x="712" y="270" class="mono sect red">OUT · WHAT PIONEER RETURNS</text>
+  <text x="712" y="292" class="mono det">everything an agent reads is wrapped UNTRUSTED</text>
+  <text x="712" y="312" class="mono det">pinned fixes say: vendor claim not verified</text>
 
-  <!-- both funnel into data access -->
-  <path d="M900 208H925V377" class="wire" marker-end="url(#arrow)"/>
-  <path d="M900 312H925" class="wire"/>
+  <!-- ================= PIONEER ON VERCEL ================= -->
+  <rect x="14" y="362" width="1172" height="224" rx="8" class="group"/>
+  <rect x="78" y="353" width="262" height="18" class="tag"/>
+  <text x="86" y="366" class="mono sect">PIONEER ON VERCEL · NEXT.JS 16</text>
 
-  <rect x="590" y="378" width="360" height="76" class="core"/>
-  <text x="606" y="409" class="mono ttl honey">DATA ACCESS</text>
-  <text x="606" y="436" class="mono det">lib/data.ts · lib/signature.ts</text>
+  <rect x="24" y="382" width="270" height="96" rx="6" class="box"/>
+  <text x="38" y="406" class="mono ttl">PAGES · FEEDS</text>
+  <text x="38" y="426" class="mono det">hive map · /live · towers</text>
+  <text x="38" y="444" class="mono det">waggle · matching · cockpit</text>
+  <text x="38" y="462" class="mono det">/llms/:vendor.txt · badge</text>
 
-  <path d="M640 482V455" class="wire" marker-end="url(#arrow)"/>
-  <text x="656" y="474" class="mono lbl">READS</text>
+  <rect x="318" y="382" width="270" height="96" rx="6" class="box"/>
+  <text x="332" y="406" class="mono ttl">HTTP API</text>
+  <text x="332" y="426" class="mono det">/api/v1/* · zod validation</text>
+  <text x="332" y="444" class="mono det">limit(): 429 per address</text>
+  <text x="332" y="462" class="mono det">draft-fix asks Gemini</text>
 
-  <rect x="590" y="482" width="360" height="76" class="box"/>
-  <text x="606" y="513" class="mono ttl">HIVE MAP · TOWERS · COCKPIT</text>
-  <text x="606" y="540" class="mono det">server components + Realtime</text>
+  <rect x="612" y="382" width="270" height="96" rx="6" class="box"/>
+  <text x="626" y="406" class="mono ttl">MCP SERVER</text>
+  <text x="626" y="426" class="mono det">/api/mcp · 9 tools</text>
+  <text x="626" y="444" class="mono det">same functions as the API</text>
+  <text x="626" y="462" class="mono det">limit(): 600 a minute</text>
 
-  <rect x="590" y="586" width="360" height="76" class="box"/>
-  <text x="606" y="617" class="mono ttl">AIRWORTHINESS BADGE</text>
-  <text x="606" y="644" class="mono det">/api/badge/:vendor · SVG</text>
+  <rect x="906" y="382" width="270" height="96" rx="6" class="core"/>
+  <text x="920" y="406" class="mono ttl honey">HOSTED LIVE FLIGHTS</text>
+  <text x="920" y="426" class="mono det">/api/v1/flight · lib/flight.ts</text>
+  <text x="920" y="444" class="mono det">Gemini function-calling loop</text>
+  <text x="920" y="462" class="mono det">NDJSON out · flights table</text>
 
-  <rect x="590" y="690" width="360" height="76" class="box"/>
-  <text x="606" y="721" class="mono ttl">STRIPE BILLING</text>
-  <text x="606" y="748" class="mono det">/api/stripe/* · lib/stripe.ts</text>
+  <!-- second row inside Vercel -->
+  <rect x="24" y="498" width="216" height="72" rx="6" class="box"/>
+  <text x="38" y="522" class="mono ttl">STRIPE BILLING</text>
+  <text x="38" y="542" class="mono sm">/api/stripe/* · lib/stripe</text>
+  <text x="38" y="558" class="mono sm">daily cron: reconcile</text>
 
-  <!-- ================= SUPABASE ================= -->
-  <rect x="1180" y="113" width="10" height="10" fill="#3ecf8e"/>
-  <text x="1200" y="130" class="mono sect">SUPABASE · POSTGRES</text>
-  <rect x="1180" y="146" width="380" height="474" class="group"/>
+  <rect x="318" y="498" width="564" height="72" rx="6" class="core"/>
+  <text x="332" y="522" class="mono ttl honey">DATA ACCESS · lib/data.ts · lib/signature.ts</text>
+  <text x="332" y="542" class="mono det">redact → normalise → codes → vendor → rpc(), service role</text>
+  <text x="332" y="558" class="mono det">every page, route, MCP tool and hosted flight goes through here</text>
 
-  <rect x="1200" y="170" width="340" height="120" class="box"/>
-  <text x="1216" y="201" class="mono ttl">TABLES · RLS</text>
-  <text x="1216" y="228" class="mono det">vendors · sites · maydays</text>
-  <text x="1216" y="250" class="mono det">flares · rescues · vendor_billing</text>
-  <text x="1216" y="272" class="mono det">public read · no direct writes</text>
+  <rect x="980" y="498" width="196" height="72" rx="6" class="box"/>
+  <text x="994" y="522" class="mono ttl">HIVEPAY SDK</text>
+  <text x="994" y="542" class="mono sm">fictional · in-process</text>
+  <text x="994" y="558" class="mono sm">docs are out of date</text>
 
-  <rect x="1200" y="310" width="340" height="170" class="box"/>
-  <text x="1216" y="341" class="mono ttl">SQL FUNCTIONS</text>
-  <text x="1216" y="368" class="mono det">report_mayday() · match_site()</text>
-  <text x="1216" y="390" class="mono det">approach() · site_briefing()</text>
-  <text x="1216" y="412" class="mono det">leave_flare() · record_rescue()</text>
-  <text x="1216" y="434" class="mono det">rate_flare() · claim_vendor()</text>
-  <text x="1216" y="456" class="mono det">mark_rescue_billed()</text>
+  <!-- wires inside Vercel -->
+  <path d="M453 478V497" class="wire" marker-end="url(#arrow)"/>
+  <path d="M747 478V497" class="wire" marker-end="url(#arrow)"/>
+  <path d="M916 478V534H883" class="wire" marker-end="url(#arrow)"/>
+  <path d="M1078 478V497" class="wire" marker-end="url(#arrow)"/>
 
-  <rect x="1200" y="500" width="340" height="100" class="box"/>
-  <text x="1216" y="531" class="mono ttl">REALTIME PUBLICATION</text>
-  <text x="1216" y="558" class="mono det">maydays · rescues · flares</text>
-  <text x="1216" y="580" class="mono det">sites · vendors</text>
+  <!-- ================= wires between Vercel and the services ================= -->
+  <!-- Stripe -->
+  <path d="M132 571V641" class="wire" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="144" y="600" class="mono lbl">CHECKOUT · METER</text>
+  <text x="144" y="614" class="mono lbl">EVENTS, WEBHOOK</text>
 
-  <!-- Mayday to Postgres -->
-  <path d="M950 416H1199" class="wire" marker-end="url(#arrow)"/>
-  <text x="984" y="406" class="mono cmd">supabase.rpc()</text>
-  <text x="984" y="438" class="mono lbl" fill-opacity="0.7">SERVICE ROLE KEY</text>
+  <!-- Realtime back to the pages -->
+  <path d="M306 641V430H295" class="wire" marker-end="url(#arrow)"/>
+  <text x="318" y="604" class="mono lbl">REALTIME · ANON KEY</text>
 
-  <!-- Realtime back to the hive map -->
-  <path d="M1200 530H951" class="wire" marker-end="url(#arrow)"/>
-  <text x="984" y="520" class="mono lbl">LIVE INSERTS</text>
-  <text x="984" y="552" class="mono lbl" fill-opacity="0.7">ANON KEY · RLS READ</text>
+  <!-- Data access to Postgres -->
+  <path d="M740 570V641" class="wire" marker-end="url(#arrow)"/>
+  <text x="752" y="604" class="mono lbl">supabase.rpc()</text>
+  <text x="752" y="618" class="mono lbl">SERVICE ROLE KEY</text>
+
+  <!-- Hosted flights to Gemini -->
+  <path d="M950 479V641" class="wire" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="962" y="604" class="mono lbl">FUNCTION CALLS</text>
+  <text x="962" y="618" class="mono lbl">AND TOOL RESULTS</text>
 
   <!-- ================= STRIPE ================= -->
-  <rect x="1180" y="649" width="10" height="10" fill="#635bff"/>
-  <text x="1200" y="666" class="mono sect">STRIPE · TEST MODE</text>
-  <rect x="1180" y="680" width="380" height="170" class="group"/>
+  <rect x="24" y="642" width="216" height="128" rx="6" class="ext"/>
+  <text x="38" y="666" class="mono ttl">STRIPE · TEST MODE</text>
+  <text x="38" y="686" class="mono sm">Checkout: claim airspace</text>
+  <text x="38" y="703" class="mono sm">Billing Meters: one event</text>
+  <text x="38" y="720" class="mono sm">per rescue id</text>
+  <text x="38" y="737" class="mono sm">webhook: subscription</text>
+  <text x="38" y="754" class="mono sm">lifecycle</text>
 
-  <rect x="1200" y="696" width="340" height="64" class="box"/>
-  <text x="1216" y="724" class="mono ttl">CHECKOUT</text>
-  <text x="1216" y="747" class="mono det">claim an airspace</text>
+  <!-- key -->
+  <text x="24" y="806" class="mono sect">KEY</text>
+  <rect x="24" y="818" width="12" height="12" fill="#b80f26"/>
+  <text x="46" y="829" class="mono sm">stop signals · trust boundary</text>
+  <rect x="24" y="840" width="12" height="12" fill="#7a3f00"/>
+  <text x="46" y="851" class="mono sm">flares · pinned fixes</text>
+  <rect x="24.5" y="862.5" width="11" height="11" fill="#fff6c2" stroke="#17130d" stroke-width="1"/>
+  <text x="46" y="873" class="mono sm">rescues (capped in wax)</text>
+  <line x1="24" y1="890" x2="36" y2="890" stroke="#17130d" stroke-width="1" stroke-dasharray="5 4"/>
+  <text x="46" y="894" class="mono sm">where it runs</text>
 
-  <rect x="1200" y="772" width="340" height="64" class="box"/>
-  <text x="1216" y="800" class="mono ttl">BILLING METERS</text>
-  <text x="1216" y="823" class="mono det">one meter event per rescue id</text>
+  <!-- ================= SUPABASE ================= -->
+  <rect x="270" y="622" width="630" height="312" rx="8" class="group"/>
+  <rect x="472" y="613" width="176" height="18" class="tag"/>
+  <text x="480" y="626" class="mono sect">SUPABASE · POSTGRES</text>
 
-  <!-- Mayday to Stripe and back -->
-  <path d="M950 712H1179" class="wire" marker-end="url(#arrow)"/>
-  <text x="984" y="702" class="mono lbl">CLAIM · METER EVENTS</text>
-  <path d="M1180 750H951" class="wire" marker-end="url(#arrow)"/>
-  <text x="984" y="772" class="mono lbl" fill-opacity="0.7">WEBHOOK</text>
+  <rect x="280" y="642" width="295" height="96" rx="6" class="box"/>
+  <text x="294" y="666" class="mono ttl">REALTIME</text>
+  <text x="294" y="686" class="mono det">postgres_changes on 7 tables</text>
+  <text x="294" y="704" class="mono det">broadcast: topic incidents</text>
+  <text x="294" y="722" class="mono det">anon key · RLS read</text>
 
-  <!-- ================= legend ================= -->
-  <line x1="40" y1="862" x2="1560" y2="862" stroke="#1f1f1f" stroke-width="1"/>
-  <rect x="40" y="875" width="10" height="10" fill="#ff3b30"/>
-  <text x="58" y="885" class="mono det">maydays</text>
-  <rect x="150" y="875" width="10" height="10" fill="#f5a524"/>
-  <text x="168" y="885" class="mono det">flares and official fixes</text>
-  <rect x="440" y="875" width="10" height="10" fill="#58b7ff"/>
-  <text x="458" y="885" class="mono det">rescues</text>
-  <text x="1560" y="885" text-anchor="end" class="mono det">one bee pays · the hive does not</text>
+  <rect x="280" y="758" width="295" height="132" rx="6" class="core"/>
+  <text x="294" y="782" class="mono ttl red">INCIDENT TRIGGER</text>
+  <text x="294" y="802" class="mono det">maydays_broadcast_incident</text>
+  <text x="294" y="820" class="mono det">after insert on maydays:</text>
+  <text x="294" y="838" class="mono det">site_incidents(30, 3) on the</text>
+  <text x="294" y="856" class="mono det">site just hit; on a spike,</text>
+  <text x="294" y="874" class="mono det">realtime.send()</text>
+
+  <rect x="595" y="642" width="295" height="146" rx="6" class="core"/>
+  <text x="609" y="666" class="mono ttl honey">SQL FUNCTIONS · WRITE API</text>
+  <text x="609" y="686" class="mono det">report_mayday() · match_site()</text>
+  <text x="609" y="704" class="mono det">match_candidates() · approach()</text>
+  <text x="609" y="722" class="mono det">record_rescue(): exactly-once,</text>
+  <text x="625" y="740" class="mono det">daily spend cap</text>
+  <text x="609" y="758" class="mono det">leave_flare() · chart_route()</text>
+  <text x="609" y="776" class="mono det">find_routes() · rate_limit()</text>
+
+  <rect x="595" y="808" width="295" height="114" rx="6" class="box"/>
+  <text x="609" y="832" class="mono ttl">TABLES · RLS = READ MODEL</text>
+  <text x="609" y="852" class="mono det">vendors · sites · maydays</text>
+  <text x="609" y="870" class="mono det">flares · rescues · routes</text>
+  <text x="609" y="888" class="mono det">flights · vendor_billing</text>
+  <text x="609" y="906" class="mono det">anon: read only, no writes</text>
+
+  <!-- wires inside Postgres -->
+  <path d="M740 788V807" class="wire" marker-end="url(#arrow)"/>
+  <path d="M594 850H576" class="wire" marker-end="url(#arrow)"/>
+  <path d="M427 757V739" class="wire" marker-end="url(#arrow)"/>
+
+  <!-- ================= GEMINI ================= -->
+  <rect x="920" y="642" width="256" height="110" rx="6" class="ext"/>
+  <text x="934" y="666" class="mono ttl">GEMINI</text>
+  <text x="934" y="686" class="mono det">flies the live flights</text>
+  <text x="934" y="704" class="mono det">drafts fixes for review</text>
+  <text x="934" y="722" class="mono det">generated the artwork</text>
+
+  <!-- said plainly -->
+  <rect x="920" y="772" width="256" height="150" rx="6" class="note"/>
+  <text x="934" y="796" class="mono ttl red">SAID PLAINLY</text>
+  <text x="934" y="816" class="mono det">vendor claims not verified</text>
+  <text x="934" y="834" class="mono det">rate limited, still open</text>
+  <text x="934" y="852" class="mono det">rescues are self-reported</text>
+  <text x="934" y="870" class="mono det">about 2,000 signals on the</text>
+  <text x="934" y="888" class="mono det">map are charted, and say so</text>
+  <text x="934" y="906" class="mono det">ratings are provisional</text>
+
+  <!-- footer -->
+  <line x1="24" y1="950" x2="1176" y2="950" stroke="#17130d" stroke-width="1"/>
+  <text x="24" y="974" class="mono lbl">docs/ARCHITECTURE.md has every function, column and limit</text>
+  <text x="1176" y="974" text-anchor="end" class="mono lbl">one bee pays · the hive does not</text>
 </svg>

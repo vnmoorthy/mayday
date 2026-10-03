@@ -9,7 +9,7 @@ import { Badge, ButtonLink, Empty, Stat } from "@/components/ui";
 import { rate, type Rating } from "@/lib/airworthiness";
 import { minutesToHuman, rescueRate } from "@/lib/format";
 import { supabaseBrowser } from "@/lib/supabase/browser";
-import type { Flare, Incident, Mayday, Rescue, Site, Vendor } from "@/lib/types";
+import type { Flare, Incident, StopSignal, Rescue, Site, Vendor } from "@/lib/types";
 import { Ago } from "./ago";
 import { BillingPanel, useBilling } from "./billing-panel";
 import { ClaimPanel } from "./claim-panel";
@@ -110,7 +110,7 @@ export function TowerClient({
     const channel = sb
       .channel(`tower:${slug}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "maydays" }, (p) => {
-        const m = p.new as Mayday;
+        const m = p.new as StopSignal;
         if (!siteIds.current.has(m.site_id)) return;
         flash(m.site_id);
         if (selectedRef.current === m.site_id) setDetailTick((n) => n + 1);
@@ -129,7 +129,7 @@ export function TowerClient({
         if (f.kind === "official") setOfficial((prev) => new Set(prev).add(f.site_id));
         if (selectedRef.current === f.site_id) setDetailTick((n) => n + 1);
       })
-      // Counters come from the site row, which the mayday and rescue
+      // Counters come from the site row, which the stop-signal and rescue
       // functions update in the same transaction as the insert.
       .on("postgres_changes", { event: "*", schema: "public", table: "sites", filter: `vendor=eq.${slug}` }, (p) => {
         if (p.eventType === "DELETE") return;
@@ -138,7 +138,7 @@ export function TowerClient({
         setSites((prev) => (prev.some((x) => x.id === s.id) ? prev.map((x) => (x.id === s.id ? { ...x, ...s } : x)) : [s, ...prev]));
         if (p.eventType === "INSERT") {
           flash(s.id);
-          // A first mayday at a new site arrives before the site is known here.
+          // A first stop signal at a new site arrives before the site is known here.
         }
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "vendors", filter: `slug=eq.${slug}` }, (p) => {
@@ -163,7 +163,7 @@ export function TowerClient({
   }, [sites]);
 
   // The rating the server computed is shown until something moves on this
-  // page (a mayday, a rescue, a pinned fix). After that it is recomputed with
+  // page (a stop signal, a rescue, a pinned fix). After that it is recomputed with
   // the same pure function, so the grade follows the table in real time.
   const rating = useMemo<Rating>(() => {
     if (serverRating && sites === initialSites && official.size === officialSiteIds.length) return serverRating;
@@ -303,7 +303,7 @@ export function TowerClient({
           index={idx()}
           title="Traffic"
           id="traffic-heading"
-          aside="Totals combine live maydays, test flights and charted failure patterns. Every replay and flare is labelled with its source."
+          aside="Totals combine live stop signals, test flights and charted failure patterns. Every replay and flare is labelled with its source."
         />
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-ink/15 bg-ink/15 lg:grid-cols-4">
           <Stat
@@ -324,7 +324,7 @@ export function TowerClient({
             className="min-w-0 bg-panel p-5 sm:p-6"
             label="Rescue rate"
             value={`${totals.rate}%`}
-            hint="rescues per mayday"
+            hint="rescues per stop signal"
           />
           <Stat
             className="min-w-0 bg-panel p-5 sm:p-6"
@@ -424,7 +424,7 @@ export function TowerClient({
                         {isHot ? (
                           <span className="mt-1.5 inline-flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-distress">
                             <span className="h-1.5 w-1.5 rounded-full bg-distress animate-flicker" aria-hidden />
-                            mayday just in
+                            signal just in
                           </span>
                         ) : null}
                       </td>
@@ -533,10 +533,10 @@ export function TowerClient({
           {verified ? (
             <span
               className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1 font-bold text-bg"
-              title="Mayday has verified this vendor. A paid claim alone does not earn this mark."
+              title="Pioneer has verified this vendor. A paid claim alone does not earn this mark."
             >
               <Check className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />
-              Verified vendor{slug === "hivepay" ? " · Mayday's own demo airspace" : ""}
+              Verified vendor{slug === "hivepay" ? " · Pioneer's own demo airspace" : ""}
             </span>
           ) : null}
           {vendor.claimed ? (
@@ -644,7 +644,7 @@ export function TowerClient({
 function Readme({ origin, slug, name }: { origin: string; slug: string; name: string }) {
   const [copied, setCopied] = useState<"idle" | "copied" | "failed">("idle");
   const path = encodeURIComponent(slug);
-  const snippet = `[![Mayday airworthiness](${origin}/api/badge/${path})](${origin}/tower/${path})`;
+  const snippet = `[![Pioneer airworthiness](${origin}/api/badge/${path})](${origin}/tower/${path})`;
 
   useEffect(() => {
     if (copied === "idle") return;
@@ -669,7 +669,7 @@ function Readme({ origin, slug, name }: { origin: string; slug: string; name: st
         <span className="label">Put it in your README</span>
         {/* A plain img: the badge is an SVG served by our own API. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`/api/badge/${path}`} alt={`Mayday airworthiness badge for ${name}`} className="h-5 max-w-full" />
+        <img src={`/api/badge/${path}`} alt={`Pioneer airworthiness badge for ${name}`} className="h-5 max-w-full" />
       </div>
       <div className="flex min-w-0 flex-col gap-2">
         <div className="terminal flex min-w-0 items-center gap-2 p-1.5 pl-0">
@@ -698,7 +698,7 @@ function Readme({ origin, slug, name }: { origin: string; slug: string; name: st
 function LiveStatus({ live }: { live: Live }) {
   if (live === "live") {
     return (
-      <span className="inline-flex items-center gap-2 text-ink" title="Subscribed to maydays, rescues and flares over Supabase Realtime">
+      <span className="inline-flex items-center gap-2 text-ink" title="Subscribed to stop signals, rescues and flares over Supabase Realtime">
         <span className="h-2 w-2 rounded-full bg-ink animate-flicker" aria-hidden />
         Live
       </span>
@@ -707,12 +707,12 @@ function LiveStatus({ live }: { live: Live }) {
   if (live === "connecting") return <span>Connecting</span>;
   if (live === "error") {
     return (
-      <Badge tone="distress" title="The Realtime channel failed. Reload to see new maydays.">
+      <Badge tone="distress" title="The Realtime channel failed. Reload to see new stop signals.">
         realtime error
       </Badge>
     );
   }
-  return <span title="Supabase Realtime is not connected. Reload the page to see new maydays.">Realtime off</span>;
+  return <span title="Supabase Realtime is not connected. Reload the page to see new stop signals.">Realtime off</span>;
 }
 
 function Th({ className, children }: { className?: string; children: React.ReactNode }) {

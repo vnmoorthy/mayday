@@ -1,5 +1,5 @@
 import { getFlightStats, getFlights } from "@/lib/data";
-import { runFlight } from "@/lib/flight";
+import { AIRSPACES, runFlight, type Airspace } from "@/lib/flight";
 import { CORS_HEADERS, HttpError, json, limit, preflight, route } from "@/lib/http";
 import { FLIGHT_SCENARIO } from "@/components/live/instructions";
 import type { FlightMode } from "@/lib/types";
@@ -25,6 +25,12 @@ export const POST = route(async (req) => {
   if (typeof mode !== "string" || !MODES.includes(mode as FlightMode)) {
     throw new HttpError(400, "Invalid request. mode must be solo, pioneer or follower.");
   }
+  // Optional: which vendor slug the flight's Pioneer calls are filed under.
+  const requested = (body as { airspace?: unknown } | null)?.airspace;
+  if (requested != null && (typeof requested !== "string" || !AIRSPACES.includes(requested as Airspace))) {
+    throw new HttpError(400, "Invalid request. airspace must be hivepay or hivepay-live.");
+  }
+  const airspace: Airspace = (requested as Airspace | undefined) ?? "hivepay";
   if (!process.env.GEMINI_API_KEY) throw new HttpError(503, "Live flights need GEMINI_API_KEY on the server.");
 
   const encoder = new TextEncoder();
@@ -38,7 +44,7 @@ export const POST = route(async (req) => {
         }
       };
       try {
-        const flight = await runFlight(mode as FlightMode, send);
+        const flight = await runFlight(mode as FlightMode, send, airspace);
         send({ kind: "flight", flight });
       } catch (e) {
         send({ kind: "error", t: 0, text: e instanceof Error ? e.message : "The flight failed to start." });

@@ -176,7 +176,7 @@ export function Scope({ sectors, blips, pulses, activeVendor, openSiteId, onTogg
       </div>
 
       <div className="pointer-events-none absolute inset-0">
-        {/* Rings for fresh traffic: red for a mayday, blue for a rescue. */}
+        {/* Rings for fresh traffic: red for a stop signal, blue for a rescue. */}
         {pulses.map((p) => {
           const b = byId.get(p.siteId);
           if (!b) return null;
@@ -265,7 +265,7 @@ export function Scope({ sectors, blips, pulses, activeVendor, openSiteId, onTogg
             <span className="label">Clear skies</span>
             <p className="mt-2 text-lg leading-snug text-ink">No crash sites charted yet</p>
             <p className="mt-2 text-sm leading-relaxed text-mute">
-              The first mayday puts a blip on the scope.{" "}
+              The first stop signal puts a blip on the scope.{" "}
               <Link href="/cockpit" className="text-ink underline decoration-line-2 underline-offset-4 hover:decoration-ink">
                 Send one from the cockpit
               </Link>

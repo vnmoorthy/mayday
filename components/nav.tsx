@@ -22,7 +22,7 @@ export function Nav() {
       <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-6 px-5 sm:px-8">
         <Link href="/" className="flex shrink-0 items-center gap-2.5 text-ink">
           <Bee className="h-7 w-8 animate-hover-bee" />
-          <span className="text-xl font-extrabold tracking-[-0.05em]">Mayday</span>
+          <span className="text-xl font-extrabold tracking-[-0.05em]">Pioneer</span>
         </Link>
         <nav className="flex items-center gap-1 overflow-x-auto">
           {LINKS.map((l) => {

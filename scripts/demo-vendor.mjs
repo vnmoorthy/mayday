@@ -1,12 +1,12 @@
-// Sets up the vendor-side demo on Mayday's own fictional vendor, HivePay, so
+// Sets up the vendor-side demo on Pioneer's own fictional vendor, HivePay, so
 // nothing is ever pinned in a real company's name. Safe to run again: every
 // step looks before it writes.
 //
 //   node --env-file=.env.local scripts/demo-vendor.mjs [--url https://your-deployment]
 //
-// 1. Upserts the HivePay vendor (verified: it is Mayday's own vendor).
+// 1. Upserts the HivePay vendor (verified: it is Pioneer's own vendor).
 // 2. Flies the flights/hivepay-payout scenario SDK offline to get its real
-//    error strings and reports one mayday for each crash site that is missing.
+//    error strings and reports one stop signal for each crash site that is missing.
 // 3. Claims the airspace.
 // 4. Drafts a fix for every crash site with no vendor-pinned fix, reviews the
 //    draft against the SDK's real requirement, and pins it.
@@ -28,7 +28,7 @@ function option(name) {
   const eq = args.find((a) => a.startsWith(`--${name}=`));
   return eq ? eq.slice(name.length + 3) : undefined;
 }
-const BASE = (option("url") || process.env.MAYDAY_URL || "http://localhost:3000").replace(/\/+$/, "");
+const BASE = (option("url") || process.env.PIONEER_URL || "http://localhost:3000").replace(/\/+$/, "");
 
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
   console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. Run with: node --env-file=.env.local scripts/demo-vendor.mjs");
@@ -196,7 +196,7 @@ if (missing.length === 0) {
   const flown = await flyScenario();
   for (const s of missing) {
     const error = errorText(s);
-    // Read-only check first: never add a mayday to some other crash site.
+    // Read-only check first: never add a stop signal to some other crash site.
     const near = await call("/api/v1/approach", { error, vendor: VENDOR.slug });
     if (near.json?.known && near.json.site && !String(near.json.site.sample_error).includes(s.code)) {
       console.log(`  SKIP ${s.code}: it would match the existing site "${near.json.site.slug}"`);
@@ -226,7 +226,7 @@ if (missing.length === 0) {
       // The matcher opens every new site as an endpoint; this one is an SDK call.
       await db.from("sites").update({ kind: "sdk" }).eq("id", r.json.site.id).eq("vendor", VENDOR.slug);
     }
-    console.log(`  mayday ${s.code} -> ${r.json.site.slug}${r.json.new_site ? " (new crash site)" : ""}`);
+    console.log(`  stop signal ${s.code} -> ${r.json.site.slug}${r.json.new_site ? " (new crash site)" : ""}`);
   }
   sites = await hivepaySites();
 }

@@ -27,7 +27,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ vendor: string 
     const best = await bestFlares(sites.map((s) => s.id));
 
     const out: string[] = [];
-    out.push(`# Known crash sites on ${vendor.name} — Mayday`, "");
+    out.push(`# Known crash sites on ${vendor.name} — Pioneer`, "");
     out.push(`> ${UNTRUSTED_HEADER}`, "");
     out.push(
       rating && rating.score !== null
@@ -67,13 +67,13 @@ export async function GET(req: Request, ctx: { params: Promise<{ vendor: string 
 
     out.push("---");
     out.push(
-      `Source: Mayday (${origin}), the stop signal for agents. Generated from mayday, flare and rescue data` +
+      `Source: Pioneer (${origin}), the stop signal for agents. Generated from stop signal, flare and rescue data` +
         " reported by coding agents, none of it verified by the vendor. Counts include charted patterns (seeded from known failure modes) as well as live reports.",
     );
-    out.push(`Went down somewhere not listed? POST ${origin}/api/v1/mayday { "error": "..." } so the next agent is warned.`);
+    out.push(`Went down somewhere not listed? Send a stop signal: POST ${origin}/api/v1/signal { "error": "..." } so the next agent is warned.`);
     out.push(`All vendor feeds: ${origin}/llms`, "");
     return text(out.join("\n"));
   } catch (e) {
-    return text(`Mayday feed unavailable: ${e instanceof Error ? e.message : "unknown error"}\n`, 500);
+    return text(`Pioneer feed unavailable: ${e instanceof Error ? e.message : "unknown error"}\n`, 500);
   }
 }

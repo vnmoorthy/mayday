@@ -4,7 +4,7 @@ import { loadPreflight, vendorSlug } from "../load";
 export const dynamic = "force-dynamic";
 
 // What an agent should know before building on a vendor: the airworthiness
-// rating and the crash sites with the most maydays, each with its best flare.
+// rating and the crash sites with the most stop signals, each with its best flare.
 export const GET = route(async (_req: Request, ctx: { params: Promise<{ vendor: string }> }) => {
   const { vendor } = await ctx.params;
   const slug = vendorSlug(decodeURIComponent(vendor));

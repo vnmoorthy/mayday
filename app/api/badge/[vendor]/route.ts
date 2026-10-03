@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 // another site cannot read our CSS variables.
 const TONE = { rescue: "#58b7ff", flare: "#f5a524", distress: "#ff3b30", mute: "#8a8a8a" } as const;
 
-const LABEL = "MAYDAY AIRWORTHINESS";
+const LABEL = "PIONEER AIRWORTHINESS";
 const H = 24;
 const PAD = 10;
 const CHAR = 7.2; // advance of one 11px mono capital, letter-spacing included
@@ -48,7 +48,7 @@ function badge(name: string | null, rating: Rating | null): string {
   const valueChars = grade.length + (score ? 1 + score.length : 0);
   const noteX = split + PAD + valueChars * CHAR + PAD * 0.8;
   const width = Math.ceil(rated ? noteX + NOTE.length * NOTE_CHAR + PAD : split + PAD + valueChars * CHAR + PAD);
-  const title = `Mayday airworthiness${name ? `, ${name}` : ""}: ${
+  const title = `Pioneer airworthiness${name ? `, ${name}` : ""}: ${
     rated ? `${grade} ${score}/100, provisional (computed mostly from charted failure patterns, not measured traffic)` : "unrated"
   }`;
 

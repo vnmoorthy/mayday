@@ -1,4 +1,4 @@
-// Generates Mayday's photographic artwork with a Gemini image model.
+// Generates Pioneer's photographic artwork with a Gemini image model.
 // Usage: node --env-file=.env.local scripts/gen-art.mjs [name ...]
 import { writeFileSync } from "node:fs";
 

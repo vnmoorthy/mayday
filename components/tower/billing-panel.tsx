@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useState } from "react";
 import clsx from "clsx";
 import { RefreshCw } from "lucide-react";
-import { Badge } from "@/components/ui";
 import { dollars } from "@/lib/format";
 import type { Billing } from "@/lib/types";
 import { api, errorMessage } from "./api";
@@ -16,6 +15,22 @@ export type BillingView = Billing & {
 };
 
 const cents = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+
+// Where billable rescues go, said plainly. The mode comes from the server's
+// Stripe key: none (demo), a test key, or a live key.
+function billingMode(stripe: BillingView["stripe"]): { text: string; hint: string; metered: boolean } | null {
+  if (!stripe) return null;
+  if (!stripe.configured || stripe.mode === "demo") {
+    return {
+      text: "Demo billing: nothing is sent to Stripe",
+      hint: "Stripe keys are not set on this deployment, so rescues are counted but never charged",
+      metered: false,
+    };
+  }
+  return stripe.mode === "live"
+    ? { text: "Stripe: live mode", hint: "Billable rescues are reported to Stripe as meter events", metered: true }
+    : { text: "Stripe: test mode", hint: "Billable rescues are reported to Stripe as test-mode meter events. No real money moves.", metered: true };
+}
 
 export type BillingState =
   | { status: "loading" }
@@ -74,6 +89,9 @@ export function BillingPanel({
   onReload: () => void;
 }) {
   const stripe = state.status === "ready" ? state.data.stripe : undefined;
+  const mode = billingMode(stripe);
+  const cap = state.status === "ready" ? cents(state.data.daily_cap_cents) : null;
+  const today = state.status === "ready" ? cents(state.data.billed_today_cents) : null;
   return (
     <>
       <SectionHead
@@ -82,15 +100,6 @@ export function BillingPanel({
         rule={false}
         aside={
           <span className="flex items-center gap-3">
-            {state.status === "ready" ? (
-              stripe?.configured ? (
-                <Badge tone="radar" title="Billable rescues are reported to Stripe as meter events">
-                  Stripe {stripe.mode}
-                </Badge>
-              ) : (
-                <Badge title="Stripe keys are not set on this deployment, so nothing is charged">Demo mode</Badge>
-              )
-            ) : null}
             <button
               type="button"
               onClick={onReload}
@@ -126,27 +135,31 @@ export function BillingPanel({
             <span className="tabular text-5xl font-extrabold leading-none tracking-tight text-ink sm:text-7xl">
               {dollars(state.data.amount_due_cents)}
             </span>
+            {mode ? (
+              <p className="mt-1 flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-[0.12em] text-ink" title={mode.hint}>
+                <span
+                  className={clsx("h-2 w-2 shrink-0 rounded-full", mode.metered ? "bg-ink" : "border border-ink/50 bg-transparent")}
+                  aria-hidden
+                />
+                {mode.text}
+              </p>
+            ) : null}
           </div>
           <div className="border-t border-ink/15">
             <Row label="Rate per rescue" value={dollars(state.data.rate_cents)} />
             <Row label="Billable rescues" value={state.data.billable_rescues.toLocaleString("en")} tone="text-rescue" />
-            <Row label="Billed to Stripe" value={state.data.billed_rescues.toLocaleString("en")} />
-            {cents(state.data.daily_cap_cents) !== null ? (
-              <Row label="Daily spend cap" value={dollars(cents(state.data.daily_cap_cents) ?? 0)} />
-            ) : null}
-            {cents(state.data.billed_today_cents) !== null ? (
+            <Row label={mode && !mode.metered ? "Sent to Stripe" : "Billed to Stripe"} value={state.data.billed_rescues.toLocaleString("en")} />
+            {cap !== null ? <Row label="Daily spend cap" value={dollars(cap)} /> : null}
+            {today !== null ? (
               <Row
                 label="Billed today"
-                value={
-                  cents(state.data.daily_cap_cents) !== null
-                    ? `${dollars(cents(state.data.billed_today_cents) ?? 0)} of ${dollars(cents(state.data.daily_cap_cents) ?? 0)}`
-                    : dollars(cents(state.data.billed_today_cents) ?? 0)
-                }
+                value={cap !== null ? `${dollars(today)} of ${dollars(cap)}` : dollars(today)}
+                tone={cap !== null && today >= cap ? "text-distress" : undefined}
               />
             ) : null}
           </div>
-          <p className="text-sm font-semibold text-ink">A mayday can be rescued, and billed, once.</p>
-          {cents(state.data.daily_cap_cents) !== null ? (
+          <p className="text-sm font-semibold text-ink">A stop signal can be rescued, and billed, once.</p>
+          {cap !== null ? (
             <p className="max-w-xl text-sm leading-relaxed text-mute">
               Billing stops for the day once the daily spend cap is reached. Rescues past the cap are still recorded, but are not billable.
             </p>
@@ -154,13 +167,10 @@ export function BillingPanel({
           <p className="max-w-xl text-sm leading-relaxed text-mute">
             {!claimed
               ? "Nothing is billable until the airspace is claimed. After that, a rescue counts only when your pinned official fix gets an agent through."
-              : stripe?.configured
+              : mode?.metered
                 ? "A rescue is billable only when your pinned official fix gets an agent through. Each one is reported to Stripe as it happens."
                 : "A rescue is billable only when your pinned official fix gets an agent through. Stripe is not configured here, so rescues are counted but never charged."}
           </p>
-          {state.data.stripe_customer_id ? (
-            <p className="break-all font-mono text-[11px] text-mute">customer {state.data.stripe_customer_id}</p>
-          ) : null}
         </>
       )}
     </>

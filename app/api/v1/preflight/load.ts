@@ -30,9 +30,9 @@ async function topFlares(siteIds: string[]): Promise<Map<string, Flare>> {
   return top;
 }
 
-// A vendor's rating plus the crash sites with the most maydays, each with the
+// A vendor's rating plus the crash sites with the most stop signals, each with the
 // fix that got agents through. Shared by GET /api/v1/preflight/[vendor] and the
-// mayday_preflight MCP tool. Null when the vendor does not exist.
+// pioneer_preflight MCP tool. Null when the vendor does not exist.
 export async function loadPreflight(slug: string, limit = PREFLIGHT_SITES): Promise<Preflight | null> {
   const vendor = await getVendor(slug);
   if (!vendor) return null;

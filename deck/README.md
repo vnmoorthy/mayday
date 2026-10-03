@@ -1,6 +1,6 @@
-# Mayday deck
+# Pioneer deck
 
-`Mayday.pptx` is the 10-slide pitch: honey-yellow field (#F6CF1B), near-black
+`Pioneer.pptx` is the 10-slide pitch: honey-yellow field (#F6CF1B), near-black
 bold type, pill labels, 16:9. It mirrors the web deck. It is generated, not
 hand-edited, so change the script and rebuild.
 
@@ -13,7 +13,7 @@ pip install python-pptx==1.0.2   # once
 python3 scripts/build_deck.py
 ```
 
-Run it from the repo root. It writes `deck/Mayday.pptx`, then reopens the file
+Run it from the repo root. It writes `deck/Pioneer.pptx`, then reopens the file
 and checks it: 10 slides, a title and speaker notes on each, a fade transition
 in the right place in every slide's XML, a photograph on slides 1, 2 and 10,
 no blue, and no shape or text box outside the slide. It prints one line per slide and exits non-zero if a check fails.
@@ -29,7 +29,7 @@ Every slide still gets its fade transition.
 
 | # | Slide | Visual |
 |---|---|---|
-| 1 | Mayday: the stop signal for agents | the hero photograph (`public/art/hero-1600.jpg`) on the right, wordmark and pills on the left |
+| 1 | Pioneer: the stop signal for agents | the hero photograph (`public/art/hero-1600.jpg`) on the right, wordmark and pills on the left |
 | 2 | The honeybee | the stop-signal photograph (`public/art/stop.jpg`) beside the two sentences |
 | 3 | The problem | three real errors in the dark code panel, agents flying into the same red cell |
 | 4 | The loop | four steps with arrows, lighting up in order |

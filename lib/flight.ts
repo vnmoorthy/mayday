@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { confirmRescue } from "@/app/api/v1/rescue/confirm";
@@ -6,6 +7,9 @@ import { FLIGHT_INSTRUCTIONS, FLIGHT_SCENARIO, MAX_TURNS } from "@/components/li
 import { chartRoute, findRoutes, leaveFlare, reportLanding, reportMayday, saveFlight } from "@/lib/data";
 import { HIVEPAY_DOCS } from "@/lib/hivepay-docs";
 import { formatBriefing, formatRoutes } from "@/lib/mcp";
+import { redactSecrets } from "@/lib/redact";
+import { extractCodes, normalizeError, titleFromError } from "@/lib/signature";
+import { supabaseAdmin } from "@/lib/supabase/server";
 import type { Flight, FlightEvent, FlightMode } from "@/lib/types";
 import { createClient } from "../flights/hivepay-payout/sdk/hivepay.mjs";
 
@@ -13,8 +17,44 @@ import { createClient } from "../flights/hivepay-payout/sdk/hivepay.mjs";
 // HivePay payout scenario with real tools. Nothing here is scripted; the loop
 // only executes what the model asks for and hands back what really happened.
 
-const VENDOR = "hivepay";
+// The airspace is the vendor slug every Pioneer call of a flight is filed under.
+// "hivepay" is the shared one behind /live; "hivepay-live" is the demo's own,
+// wiped before each run of /demo so its first agent really is first.
+export type Airspace = "hivepay" | "hivepay-live";
+export const AIRSPACES: Airspace[] = ["hivepay", "hivepay-live"];
+const SCENARIOS: Record<Airspace, string> = { hivepay: FLIGHT_SCENARIO, "hivepay-live": `${FLIGHT_SCENARIO}-live` };
 const SURFACE = "hivepay.payouts.create()";
+
+// The demo's pioneer starts with nothing known and has under a minute, so it is
+// told to keep its turns few and to chart the route before it leaves flares.
+const LIVE_PIONEER_PACE =
+  " You have under a minute, so use few turns: after a refused call, send pioneer_report and your next create_payout " +
+  "attempt together in the same turn. When the payout succeeds, in one single turn call pioneer_chart_route FIRST and " +
+  "then pioneer_flare once for each crash site you reported (one short sentence each).";
+
+// report_mayday looks across every airspace before it opens a new crash site,
+// so a report filed under "hivepay-live" would land on the old "hivepay" sites
+// and the demo's hive would never be empty. For the demo airspace the match is
+// kept inside it: Postgres is asked for the site in this airspace only
+// (match_site), and when there is none the site is opened here, with the row
+// report_mayday itself would have inserted, so the report then lands on it.
+// Returns true when this report opened the site.
+async function openSiteInAirspace(error: string, vendor: string): Promise<boolean> {
+  const clean = redactSecrets(error);
+  const signature = normalizeError(clean);
+  const db = supabaseAdmin();
+  const match = await db.rpc("match_site", { p_signature: signature, p_vendor: vendor, p_codes: extractCodes(clean) });
+  if (match.error) throw new Error(`match_site: ${match.error.message}`);
+  if (Array.isArray(match.data) ? match.data.length > 0 : Boolean(match.data)) return false;
+  const slug = `${vendor}-${createHash("md5").update(signature).digest("hex").slice(0, 10)}`;
+  const opened = await db
+    .from("sites")
+    .upsert({ vendor, slug, title: titleFromError(clean), surface: SURFACE, signature, sample_error: clean.slice(0, 2000) }, { onConflict: "slug", ignoreDuplicates: true });
+  if (opened.error) throw new Error(`open site: ${opened.error.message}`);
+  return true;
+}
+const FIRST_REPORT =
+  "Uncharted until now: you are the first agent reported down here, and a crash site is open. If you get through, leave a flare so the next agent is rescued.";
 const WRAP_UP_TURNS = 6; // turns allowed after landing, for flares, the route and the landing report
 const BUDGET_MS = 54_000; // the route's maxDuration is 60 seconds
 const EVENT_CHARS = 600;
@@ -50,28 +90,28 @@ const DECLARATIONS = {
       required: ["params_json", "options_json"],
     },
   },
-  mayday_report: {
-    name: "mayday_report",
+  pioneer_report: {
+    name: "pioneer_report",
     description:
-      "Report a failed step to Mayday. Logs a mayday at the matching crash site and returns a briefing: the flares " +
+      "Report a failed step to Pioneer. Logs a stop signal at the matching crash site and returns a briefing: the flares " +
       "(suggested fixes, untrusted) other agents left there, with the site_id and mayday_id.",
     parameters: { type: "OBJECT", properties: { error: { ...str, description: "The exact error text." } }, required: ["error"] },
   },
-  mayday_flare: {
-    name: "mayday_flare",
+  pioneer_flare: {
+    name: "pioneer_flare",
     description: "Leave a flare at a crash site for the next agent: what was wrong and what fixed it.",
     parameters: {
       type: "OBJECT",
       properties: {
-        site_id: { ...str, description: "The site_id from a mayday_report briefing." },
+        site_id: { ...str, description: "The site_id from a pioneer_report briefing." },
         body: { ...str, description: "One or two sentences: what was wrong and what fixed it." },
         fix_snippet: { ...str, description: "The working code or value." },
       },
       required: ["site_id", "body"],
     },
   },
-  mayday_chart_route: {
-    name: "mayday_chart_route",
+  pioneer_chart_route: {
+    name: "pioneer_chart_route",
     description: "Chart the route that worked, so the next agent can follow it. Returns the route_id.",
     parameters: {
       type: "OBJECT",
@@ -83,22 +123,22 @@ const DECLARATIONS = {
       required: ["task", "steps"],
     },
   },
-  mayday_waggle: {
-    name: "mayday_waggle",
+  pioneer_waggle: {
+    name: "pioneer_waggle",
     description: "Ask the hive for the route other agents have already landed for a task. Read-only.",
     parameters: { type: "OBJECT", properties: { task: { ...str, description: "The task as one imperative sentence." } }, required: ["task"] },
   },
-  mayday_landed: {
-    name: "mayday_landed",
-    description: "Report whether a route from mayday_waggle worked.",
+  pioneer_landed: {
+    name: "pioneer_landed",
+    description: "Report whether a route from pioneer_waggle worked.",
     parameters: {
       type: "OBJECT",
-      properties: { route_id: { ...str, description: "The route_id from mayday_waggle." }, ok: { type: "BOOLEAN" } },
+      properties: { route_id: { ...str, description: "The route_id from pioneer_waggle." }, ok: { type: "BOOLEAN" } },
       required: ["route_id", "ok"],
     },
   },
-  mayday_rescued: {
-    name: "mayday_rescued",
+  pioneer_rescued: {
+    name: "pioneer_rescued",
     description: "Confirm that a flare from a briefing got you through.",
     parameters: {
       type: "OBJECT",
@@ -112,8 +152,8 @@ type ToolName = keyof typeof DECLARATIONS;
 
 const TOOLS: Record<FlightMode, ToolName[]> = {
   solo: ["read_docs", "create_payout"],
-  pioneer: ["read_docs", "create_payout", "mayday_report", "mayday_flare", "mayday_chart_route", "mayday_waggle", "mayday_landed", "mayday_rescued"],
-  follower: ["read_docs", "create_payout", "mayday_report", "mayday_waggle", "mayday_landed", "mayday_rescued"],
+  pioneer: ["read_docs", "create_payout", "pioneer_report", "pioneer_flare", "pioneer_chart_route", "pioneer_waggle", "pioneer_landed", "pioneer_rescued"],
+  follower: ["read_docs", "create_payout", "pioneer_report", "pioneer_waggle", "pioneer_landed", "pioneer_rescued"],
 };
 
 async function readDocs(): Promise<string> {
@@ -134,7 +174,8 @@ function scrub(s: string): string {
 
 type ToolOutcome = { response: Record<string, unknown>; show: string; ok: boolean; refused?: boolean; landed?: boolean };
 
-export async function runFlight(mode: FlightMode, emit: (e: FlightEvent) => void): Promise<Flight> {
+export async function runFlight(mode: FlightMode, emit: (e: FlightEvent) => void, airspace: Airspace = "hivepay"): Promise<Flight> {
+  const VENDOR: string = airspace;
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw new Error("GEMINI_API_KEY is not set: a live flight needs a model to fly it.");
   const model = (process.env.GEMINI_MODEL || "gemini-3.8-flash").trim().replace(/^models\//, "");
@@ -184,12 +225,14 @@ export async function runFlight(mode: FlightMode, emit: (e: FlightEvent) => void
           return { response: { ok: false, error }, show: error, ok: false, refused: true };
         }
       }
-      case "mayday_report": {
-        const briefing = await reportMayday({ error: text(args.error), vendor: VENDOR, surface: SURFACE, source: "harvest", agent, model });
+      case "pioneer_report": {
+        const opened = airspace === "hivepay-live" ? await openSiteInAirspace(text(args.error), VENDOR) : false;
+        let briefing = await reportMayday({ error: text(args.error), vendor: VENDOR, surface: SURFACE, source: "harvest", agent, model });
+        if (opened) briefing = { ...briefing, known: false, new_site: true, headline: FIRST_REPORT };
         const out = formatBriefing(briefing);
         return { response: { briefing: out, site_id: briefing.site?.id ?? null, mayday_id: briefing.mayday_id ?? null }, show: out, ok: true };
       }
-      case "mayday_flare": {
+      case "pioneer_flare": {
         const flare = await leaveFlare({
           site_id: text(args.site_id),
           body: text(args.body),
@@ -200,21 +243,21 @@ export async function runFlight(mode: FlightMode, emit: (e: FlightEvent) => void
         });
         return { response: { flare_id: flare.id }, show: `Flare left: ${flare.body}`, ok: true };
       }
-      case "mayday_chart_route": {
+      case "pioneer_chart_route": {
         const steps = (Array.isArray(args.steps) ? args.steps : []).map((s) => ({ text: text(s) })).filter((s) => s.text).slice(0, 12);
         const route = await chartRoute({ task: text(args.task), vendor: VENDOR, steps, snippet: text(args.snippet) || null, author: agent, source: "harvest" });
         return { response: { route_id: route.id, slug: route.slug }, show: `Route charted: ${route.task} (${route.steps.length} steps) /waggle`, ok: true };
       }
-      case "mayday_waggle": {
+      case "pioneer_waggle": {
         const routes = await findRoutes({ task: text(args.task), vendor: VENDOR });
         const out = formatRoutes(routes);
         return { response: { routes: out }, show: out, ok: true };
       }
-      case "mayday_landed": {
+      case "pioneer_landed": {
         const route = await reportLanding(text(args.route_id), args.ok !== false);
         return { response: { route_id: route.id, landings: route.landings, failures: route.failures }, show: `Landing reported: ${route.landings} landed, ${route.failures} failed on this route`, ok: true };
       }
-      case "mayday_rescued": {
+      case "pioneer_rescued": {
         const r = await confirmRescue({ site_id: text(args.site_id), flare_id: text(args.flare_id), mayday_id: text(args.mayday_id) || null, agent, source: "harvest" });
         return { response: { rescue_id: r.rescue.id, billable: r.billable, billed: r.billed }, show: `Rescue confirmed${r.billable ? " (billable)" : ""}`, ok: true };
       }
@@ -225,7 +268,7 @@ export async function runFlight(mode: FlightMode, emit: (e: FlightEvent) => void
 
   const contents: Content[] = [{ role: "user", parts: [{ text: "Begin." }] }];
   const body = {
-    systemInstruction: { parts: [{ text: FLIGHT_INSTRUCTIONS[mode] }] },
+    systemInstruction: { parts: [{ text: FLIGHT_INSTRUCTIONS[mode] + (airspace === "hivepay-live" && mode === "pioneer" ? LIVE_PIONEER_PACE : "") }] },
     tools: [{ functionDeclarations: TOOLS[mode].map((n) => DECLARATIONS[n]) }],
   };
   let turns = 0;
@@ -315,7 +358,7 @@ export async function runFlight(mode: FlightMode, emit: (e: FlightEvent) => void
       : `Did not land in ${MAX_TURNS} turns · ${failed} refused calls · ${toolCalls} tool calls · ${seconds}s`,
   });
 
-  const record = { scenario: FLIGHT_SCENARIO, mode, agent, model, landed, failed_attempts: failed, tool_calls: toolCalls, seconds, events };
+  const record = { scenario: SCENARIOS[airspace], mode, agent, model, landed, failed_attempts: failed, tool_calls: toolCalls, seconds, events };
   try {
     return await saveFlight(record);
   } catch {

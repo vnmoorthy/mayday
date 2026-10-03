@@ -1,5 +1,5 @@
 {
-  "description": "Mayday: vaccinate the session against known crash sites on its stack, report failed Bash commands and brief the agent with known fixes",
+  "description": "Pioneer: vaccinate the session against known crash sites on its stack, report failed Bash commands and brief the agent with known fixes",
   "hooks": {
     "SessionStart": [
       {
@@ -13,7 +13,7 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/mayday-hook.mjs\"", "timeout": 10 }
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/pioneer-hook.mjs\"", "timeout": 10 }
         ]
       }
     ],
@@ -21,7 +21,7 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/mayday-hook.mjs\"", "timeout": 10 }
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/pioneer-hook.mjs\"", "timeout": 10 }
         ]
       }
     ]

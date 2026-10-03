@@ -1,6 +1,6 @@
 // Removes what scripts/demo-incident.mjs created, so the incident can be shown
 // again from the start: the HivePay crash site whose sample error contains
-// HP_SCHEMA_V24, with its maydays, flares and rescues. Nothing else is touched:
+// HP_SCHEMA_V24, with its stop signals, flares and rescues. Nothing else is touched:
 // the four HivePay payout crash sites and their pinned fixes stay.
 //
 //   node --env-file=.env.local scripts/demo-reset.mjs [--dry-run]
@@ -51,12 +51,12 @@ if (targets.length === 0) {
 
 for (const site of targets) {
   const [maydays, flares, rescues] = await Promise.all([count("maydays", site.id), count("flares", site.id), count("rescues", site.id)]);
-  const what = `${site.slug} ("${site.title}") · ${maydays} mayday${maydays === 1 ? "" : "s"}, ${flares} flare${flares === 1 ? "" : "s"}, ${rescues} rescue${rescues === 1 ? "" : "s"}`;
+  const what = `${site.slug} ("${site.title}") · ${maydays} stop signal${maydays === 1 ? "" : "s"}, ${flares} flare${flares === 1 ? "" : "s"}, ${rescues} rescue${rescues === 1 ? "" : "s"}`;
   if (DRY) {
     console.log(`Would remove ${what}`);
     continue;
   }
-  // Maydays, flares and rescues go with the site (on delete cascade).
+  // Stop signals, flares and rescues go with the site (on delete cascade).
   const { error: gone } = await db.from("sites").delete().eq("id", site.id).eq("vendor", VENDOR).ilike("sample_error", `%${CODE}%`);
   if (gone) stop(`Could not remove ${site.slug}`, gone);
   console.log(`Removed ${what}`);

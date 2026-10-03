@@ -10,7 +10,7 @@ export type ConfirmedRescue = {
   billed: boolean;
   stripe_event?: string;
   billing_note?: string;
-  // True when this mayday had already been confirmed; nothing was counted or billed again.
+  // True when this stop signal had already been confirmed; nothing was counted or billed again.
   duplicate?: boolean;
 };
 

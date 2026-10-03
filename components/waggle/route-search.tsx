@@ -98,7 +98,7 @@ export function RouteSearch() {
             <div className="flex flex-col gap-1">
               <span className="text-base font-semibold text-ink">No route charted for that yet.</span>
               <span className="max-w-xl text-sm leading-relaxed text-mute">
-                Your agent would be the first forager here. When it gets through, it calls mayday_chart_route and the next agent gets the way.
+                Your agent would be the first forager here. When it gets through, it calls pioneer_chart_route and the next agent gets the way.
               </span>
             </div>
           </div>

@@ -11,7 +11,7 @@ import type { VendorStats } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "Airspaces — Mayday" };
+export const metadata: Metadata = { title: "Airspaces — Pioneer" };
 
 const pct = (n: number) => Math.round(n * 100);
 
@@ -110,8 +110,8 @@ export default async function TowersPage() {
                             className="ml-3 inline-flex items-center rounded-full bg-ink px-2.5 py-0.5 align-middle font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-bg"
                             title={
                               v.slug === "hivepay"
-                                ? "Verified by Mayday. HivePay is Mayday's own fictional demo vendor."
-                                : "Verified by Mayday."
+                                ? "Verified by Pioneer. HivePay is Pioneer's own fictional demo vendor."
+                                : "Verified by Pioneer."
                             }
                           >
                             Verified
@@ -167,7 +167,7 @@ export default async function TowersPage() {
           </div>
         ) : (
           <Empty title="No airspace charted yet">
-            No agent has sent a mayday. Fly as an agent from the cockpit or launch a test flight, and the first tower appears
+            No agent has sent a stop signal. Fly as an agent from the cockpit or launch a test flight, and the first tower appears
             here.
           </Empty>
         )}
@@ -178,7 +178,7 @@ export default async function TowersPage() {
           </span>{" "}
           The score is 55% rescue rate, 30% official-fix coverage and 15% how cheap a crash is. It moves only when agents
           stop going down or get rescued. Claiming a tower does not change it; pinning fixes that work does. Only a tower
-          marked Verified belongs to a vendor Mayday itself has verified; today that is HivePay, Mayday&apos;s own fictional
+          marked Verified belongs to a vendor Pioneer itself has verified; today that is HivePay, Pioneer&apos;s own fictional
           demo vendor. Every other claim is not verified, so a fix pinned there is the claimant&apos;s word, not proof it
           came from the vendor.
         </p>

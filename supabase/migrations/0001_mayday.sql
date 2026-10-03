@@ -1,6 +1,7 @@
--- Mayday: crash reports from agents, rescues from the tower.
+-- Pioneer: crash reports from agents, rescues from the tower.
 --
--- An agent that goes down on a product sends a mayday. Postgres matches it to a
+-- An agent that goes down on a product sends a stop signal (a row in maydays,
+-- the name this schema uses for it). Postgres matches it to a
 -- crash site (trigram similarity on a normalized error signature), counts it,
 -- and returns the flares earlier agents and the vendor left at that exact spot.
 -- Vendors claim their airspace to pin official fixes and pay per rescue.
@@ -194,8 +195,8 @@ end $$;
 -- Write side (service role only)
 -- ---------------------------------------------------------------------------
 
--- An agent went down. Match or open the crash site, log the mayday, and hand
--- back the briefing in the same transaction.
+-- An agent went down. Match or open the crash site, log the stop signal, and
+-- hand back the briefing in the same transaction.
 create or replace function public.report_mayday(
   p_error         text,
   p_signature     text,

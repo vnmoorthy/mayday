@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Launches a test flight: a real Claude Code agent, run headlessly against one
-// of the trap scenarios in flights/. With the Mayday plugin loaded the agent
-// reports its own maydays through the hook; without it (or if the hook stayed
-// silent) the flight leaves one summary mayday with source "harvest".
+// of the trap scenarios in flights/. With the Pioneer plugin loaded the agent
+// reports its own stop signals through the hook; without it (or if the hook stayed
+// silent) the flight leaves one summary stop signal with source "harvest".
 //
-//   node scripts/test-flight.mjs --scenario stripe-webhook [--runs 1] [--no-mayday] [--url http://localhost:3000]
+//   node scripts/test-flight.mjs --scenario stripe-webhook [--runs 1] [--no-pioneer] [--url http://localhost:3000]
 
 import { spawn } from "node:child_process";
 import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync } from "node:fs";
@@ -32,16 +32,16 @@ function scenarios() {
 function usage() {
   const list = scenarios();
   return [
-    "Mayday test flight: run a real agent against a trap and record where it goes down.",
+    "Pioneer test flight: run a real agent against a trap and record where it goes down.",
     "",
     "Usage:",
-    "  node scripts/test-flight.mjs --scenario <name> [--runs 1] [--no-mayday] [--url http://localhost:3000]",
+    "  node scripts/test-flight.mjs --scenario <name> [--runs 1] [--no-pioneer] [--url http://localhost:3000]",
     "",
     "Options:",
     "  --scenario <name>  scenario directory under flights/ (required)",
     "  --runs <n>         number of flights to launch, one after another (default 1)",
-    "  --no-mayday        fly without the Mayday plugin: the control run, no briefings",
-    "  --url <url>        Mayday server to report to (default $MAYDAY_URL or http://localhost:3000)",
+    "  --no-pioneer       fly without the Pioneer plugin: the control run, no briefings",
+    "  --url <url>        Pioneer server to report to (default $PIONEER_URL or http://localhost:3000)",
     "  --model <model>    model passed to claude --model (default: your Claude Code default)",
     "  --keep             keep the temporary working copy after the flight",
     "  --help             show this help",
@@ -53,7 +53,7 @@ function usage() {
 }
 
 function parseArgs(argv) {
-  const o = { scenario: null, runs: 1, mayday: true, url: process.env.MAYDAY_URL || "http://localhost:3000", model: null, keep: false, help: false };
+  const o = { scenario: null, runs: 1, mayday: true, url: process.env.PIONEER_URL || "http://localhost:3000", model: null, keep: false, help: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const value = () => {
@@ -64,7 +64,7 @@ function parseArgs(argv) {
     if (a === "--help" || a === "-h") o.help = true;
     else if (a === "--scenario") o.scenario = value();
     else if (a === "--runs") o.runs = Number(value());
-    else if (a === "--no-mayday") o.mayday = false;
+    else if (a === "--no-pioneer" || a === "--no-mayday") o.mayday = false;
     else if (a === "--url") o.url = value();
     else if (a === "--model") o.model = value();
     else if (a === "--keep") o.keep = true;
@@ -158,11 +158,11 @@ async function fly(o, n) {
   if (before.code === 0) console.warn(`  warning: ${o.scenario} passes before the agent starts, so the trap is not armed`);
 
   const args = ["-p", task, "--output-format", "json", "--permission-mode", "acceptEdits"];
-  if (o.mayday) args.push("--plugin-dir", PLUGIN, "--allowedTools", "Bash,Read,Edit,Write,mcp__plugin_mayday_mayday");
+  if (o.mayday) args.push("--plugin-dir", PLUGIN, "--allowedTools", "Bash,Read,Edit,Write,mcp__plugin_pioneer_pioneer");
   else args.push("--allowedTools", "Bash,Read,Edit,Write");
   if (o.model) args.push("--model", o.model);
 
-  const env = { ...process.env, MAYDAY_URL: o.url, MAYDAY_SOURCE: "harvest", MAYDAY_FLIGHT_LOG: log };
+  const env = { ...process.env, PIONEER_URL: o.url, PIONEER_SOURCE: "harvest", PIONEER_FLIGHT_LOG: log };
   const started = Date.now();
   const agent = await run("claude", args, { cwd: work, env, timeoutMs: AGENT_TIMEOUT_MS });
   const elapsed = Date.now() - started;
@@ -180,7 +180,7 @@ async function fly(o, n) {
   const model = report.modelUsage ? Object.keys(report.modelUsage)[0] : o.model;
 
   // An agent that could not start (not signed in, no credit) never flew, so
-  // there is no crash to record. Abort instead of logging a mayday.
+  // there is no crash to record. Abort instead of logging a stop signal.
   if (report.is_error && !(report.total_cost_usd > 0)) {
     rmSync(work, { recursive: true, force: true });
     rmSync(logDir, { recursive: true, force: true });
@@ -215,7 +215,7 @@ async function fly(o, n) {
         { step: 1, action: "node check.mjs (before the agent started)", result: firstError.slice(0, 300) },
         {
           step: 2,
-          action: `claude -p <TASK.md> ${o.mayday ? "with" : "without"} the Mayday plugin, ${report.num_turns ?? "?"} turns, ${seconds(elapsed)}`,
+          action: `claude -p <TASK.md> ${o.mayday ? "with" : "without"} the Pioneer plugin, ${report.num_turns ?? "?"} turns, ${seconds(elapsed)}`,
           result: agentResult.slice(0, 300),
         },
         { step: 3, action: "node check.mjs (after the agent finished)", result: passed ? "PASS" : output(after).slice(0, 300) },
@@ -226,18 +226,18 @@ async function fly(o, n) {
   const bits = [
     `flight ${n}/${o.runs}`,
     o.scenario,
-    o.mayday ? "mayday on" : "mayday off",
+    o.mayday ? "Pioneer on" : "Pioneer off",
     passed ? "PASS" : agent.timedOut ? "FAIL (timeout)" : "FAIL",
     seconds(elapsed),
     `${report.num_turns ?? "?"} turns`,
     typeof report.total_cost_usd === "number" ? `$${report.total_cost_usd.toFixed(2)}` : null,
     reported
-      ? `${reported} mayday${reported === 1 ? "" : "s"} via hook`
+      ? `${reported} stop signal${reported === 1 ? "" : "s"} via hook`
       : harvest
         ? harvest.ok
-          ? `harvest mayday ${harvest.mayday_id ?? "sent"}${harvest.site ? ` at ${harvest.site}` : ""}`
-          : `harvest mayday not sent (${harvest.reason})`
-        : "no mayday",
+          ? `harvest stop signal ${harvest.mayday_id ?? "sent"}${harvest.site ? ` at ${harvest.site}` : ""}`
+          : `harvest stop signal not sent (${harvest.reason})`
+        : "no stop signal",
   ].filter(Boolean);
   console.log(bits.join("  ·  "));
 
@@ -266,7 +266,7 @@ async function main() {
     process.exit(2);
   }
 
-  console.log(`Test flight: ${o.scenario} · ${o.runs} run${o.runs === 1 ? "" : "s"} · ${o.mayday ? `Mayday plugin on, reporting to ${o.url}` : `Mayday plugin off, summary to ${o.url}`}`);
+  console.log(`Test flight: ${o.scenario} · ${o.runs} run${o.runs === 1 ? "" : "s"} · ${o.mayday ? `Pioneer plugin on, reporting to ${o.url}` : `Pioneer plugin off, summary to ${o.url}`}`);
   const results = [];
   for (let n = 1; n <= o.runs; n++) results.push(await fly(o, n));
 
@@ -276,7 +276,7 @@ async function main() {
   const harvested = results.filter((r) => r.harvested).length;
   const cost = results.reduce((s, r) => s + (r.cost || 0), 0);
   console.log(
-    `Summary: ${passed}/${results.length} landed · average ${seconds(avg)} · ${hook} mayday${hook === 1 ? "" : "s"} via hook · ${harvested} harvest summar${harvested === 1 ? "y" : "ies"}${cost ? ` · $${cost.toFixed(2)}` : ""}`,
+    `Summary: ${passed}/${results.length} landed · average ${seconds(avg)} · ${hook} stop signal${hook === 1 ? "" : "s"} via hook · ${harvested} harvest summar${harvested === 1 ? "y" : "ies"}${cost ? ` · $${cost.toFixed(2)}` : ""}`,
   );
   process.exit(passed === results.length ? 0 : 1);
 }

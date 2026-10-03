@@ -92,7 +92,7 @@ export function Empty({ title, children }: { title: string; children?: ReactNode
   );
 }
 
-// The Mayday bee. A single glyph, coloured by `currentColor`.
+// The Pioneer bee. A single glyph, coloured by `currentColor`.
 export function Bee({ className, ...props }: ComponentProps<"svg">) {
   return (
     <svg viewBox="0 0 48 40" fill="currentColor" aria-hidden="true" className={className} {...props}>

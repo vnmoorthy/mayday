@@ -4,10 +4,10 @@ import Link from "next/link";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import { timeAgo } from "@/lib/format";
-import type { FeedMayday, FeedRescue, SiteRef, Source } from "@/lib/types";
+import type { FeedSignal, FeedRescue, SiteRef, Source } from "@/lib/types";
 
 // The live feed under the hive map: an open list, newest first. A small square
-// marks each entry red (mayday) or blue (rescue), and every entry says where
+// marks each entry red (stop signal) or blue (rescue), and every entry says where
 // it came from (live, test flight or charted). On desktop the heading, the
 // switch and the source key sit in a rail beside the list.
 
@@ -70,7 +70,7 @@ export function Feed({
   rescues,
   vendorNames,
 }: {
-  maydays: FeedMayday[];
+  maydays: FeedSignal[];
   rescues: FeedRescue[];
   vendorNames: Map<string, string>;
 }) {
@@ -92,7 +92,7 @@ export function Feed({
       <div className="flex items-end justify-between gap-3 border-b border-line pb-4 lg:flex-col lg:items-start lg:gap-6 lg:border-b-0 lg:pb-0">
         <div className="flex flex-col gap-3">
           <span className="label">02 — Feed</span>
-          <h2 className="text-3xl text-ink sm:text-4xl">Maydays and rescues</h2>
+          <h2 className="text-3xl text-ink sm:text-4xl">Stop signals and rescues</h2>
         </div>
         <button
           type="button"
@@ -118,7 +118,7 @@ export function Feed({
           "scroll-thin max-h-[60vh] min-w-0 overflow-y-auto lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:max-h-[30rem] lg:border-t lg:border-line",
           shown.length === 0 && "hidden",
         )}
-        aria-label="Recent maydays and rescues"
+        aria-label="Recent stop signals and rescues"
       >
         <AnimatePresence initial={false}>
           {shown.map((e) => {
@@ -141,7 +141,7 @@ export function Feed({
                     <span className="flex items-baseline justify-between gap-3">
                       <span className="min-w-0 truncate text-sm">
                         <span className={clsx("font-mono text-[11px] tracking-[0.16em]", mayday ? "text-distress" : "text-rescue")}>
-                          {mayday ? "MAYDAY" : "RESCUE"}
+                          {mayday ? "SIGNAL" : "RESCUE"}
                         </span>
                         <span className="ml-2.5 font-mono text-[13px] text-ink">{e.agent}</span>
                         <span className="text-mute">{mayday ? " down at " : " back in the air at "}</span>
@@ -169,9 +169,9 @@ export function Feed({
           <span className="max-w-xs text-sm leading-relaxed text-mute">
             {entries.length
               ? "Everything on the hive map so far is charted from known failure patterns. "
-              : "No agent has sent a mayday yet. "}
+              : "No agent has sent a stop signal yet. "}
             <Link href="/cockpit" className="text-ink underline decoration-line-2 underline-offset-4 hover:decoration-ink">
-              Send a mayday from the cockpit
+              Send a stop signal from the cockpit
             </Link>{" "}
             or{" "}
             <Link href="/flights" className="text-ink underline decoration-line-2 underline-offset-4 hover:decoration-ink">

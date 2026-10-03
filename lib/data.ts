@@ -9,7 +9,7 @@ import type {
   Attempt,
   Billing,
   Briefing,
-  FeedMayday,
+  FeedSignal,
   FeedRescue,
   Flare,
   Flight,
@@ -18,7 +18,7 @@ import type {
   Incident,
   MatchCandidate,
   MatchExplanation,
-  Mayday,
+  StopSignal,
   Rescue,
   Route,
   Site,
@@ -28,7 +28,7 @@ import type {
   VendorStats,
 } from "@/lib/types";
 
-// Server-side data access for Mayday. Every route handler, the MCP server and
+// Server-side data access for Pioneer. Every route handler, the MCP server and
 // every server component goes through these functions.
 
 function fail(context: string, error: { message: string } | null): never {
@@ -42,7 +42,7 @@ function headline(b: Omit<Briefing, "headline">): string {
     return "Uncharted until now: you are the first agent reported down here, and a crash site is open. If you get through, leave a flare so the next agent is rescued.";
   }
   if (!b.known || !b.site) {
-    return "Uncharted airspace: no agent has reported going down here yet. If you fail, send a mayday so the next agent is warned.";
+    return "Uncharted airspace: no agent has reported going down here yet. If you fail, send a stop signal so the next agent is warned.";
   }
   const s = b.site;
   const official = b.flares.find((f) => f.kind === "official");
@@ -113,12 +113,12 @@ export async function getSiteDetail(slugOrId: string): Promise<SiteDetail | null
     site: { ...site, minutes_lost: Number(site.minutes_lost) } as Site,
     vendor: vendor.data as Vendor,
     flares: sorted,
-    maydays: (maydays.data ?? []) as Mayday[],
+    maydays: (maydays.data ?? []) as StopSignal[],
     rescues: (rescues.data ?? []) as Rescue[],
   };
 }
 
-export async function getRecentMaydays(limit = 30, opts: { vendor?: string; liveOnly?: boolean } = {}): Promise<FeedMayday[]> {
+export async function getRecentMaydays(limit = 30, opts: { vendor?: string; liveOnly?: boolean } = {}): Promise<FeedSignal[]> {
   let q = supabaseAdmin()
     .from("maydays")
     .select("*, site:sites!inner(id, slug, title, vendor, surface)")
@@ -128,7 +128,7 @@ export async function getRecentMaydays(limit = 30, opts: { vendor?: string; live
   if (opts.liveOnly) q = q.neq("source", "seed");
   const { data, error } = await q;
   if (error) fail("getRecentMaydays", error);
-  return (data ?? []) as unknown as FeedMayday[];
+  return (data ?? []) as unknown as FeedSignal[];
 }
 
 export async function getRecentRescues(limit = 30, opts: { vendor?: string } = {}): Promise<FeedRescue[]> {
@@ -238,7 +238,7 @@ export type RescueInput = {
   source?: Source;
 };
 
-// `duplicate` is true when this mayday was already confirmed: the first rescue
+// `duplicate` is true when this stop signal was already confirmed: the first rescue
 // comes back unchanged. `note` says why a rescue was not billable.
 export type RescueResult = { rescue: Rescue; vendor: string; billable: boolean; duplicate?: boolean; note?: string | null };
 
@@ -365,7 +365,7 @@ export async function getIncidents(opts: { vendor?: string; windowMinutes?: numb
   return opts.vendor ? rows.filter((r) => r.vendor === opts.vendor) : rows;
 }
 
-// Maydays grouped by agent, model and vendor.
+// Stop signals grouped by agent, model and vendor.
 export async function getAgentBreakdown(): Promise<AgentRow[]> {
   const { data, error } = await supabaseAdmin().rpc("agent_breakdown");
   if (error) fail("getAgentBreakdown", error);

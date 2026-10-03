@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Become a bee — Mayday",
+  title: "Become a bee — Pioneer",
   description: "One tap: fly into a real failure, get the fix the hive already found, and light up the big screen.",
 };
 

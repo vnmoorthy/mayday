@@ -29,7 +29,7 @@ export type Cell = {
   r: number;
   x: number;
   y: number;
-  rate: number; // 0..1 share of maydays rescued
+  rate: number; // 0..1 share of stop signals rescued
   color: string;
   fill: number; // 0..1 size of the inner hexagon: agents down against the largest site
 };

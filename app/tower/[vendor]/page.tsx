@@ -36,7 +36,7 @@ async function pageOrigin(): Promise<string> {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { vendor } = await params;
-  return { title: `${decode(vendor)} tower — Mayday` };
+  return { title: `${decode(vendor)} tower — Pioneer` };
 }
 
 export default async function TowerPage({ params, searchParams }: Props) {

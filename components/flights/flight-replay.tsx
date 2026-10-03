@@ -25,7 +25,7 @@ export function AutoRefresh({ active }: { active: boolean }) {
   return null;
 }
 
-// Data colours light enough for the dark well: red for maydays, honey for
+// Data colours light enough for the dark well: red for stop signals, honey for
 // flares, pale wax for everything else.
 const TONE: Record<ReplayKind, string> = {
   mayday: PALE_RED,
@@ -228,7 +228,7 @@ export function FlightReplay({
         )}
       </div>
       <div className="mt-4 grid gap-5 lg:grid-cols-2">
-        <Column role="Pioneer" agent={pioneerAgent} entries={pioneer} shown={shown} playing={playing} waiting={pioneerWaiting} />
+        <Column role="First agent" agent={pioneerAgent} entries={pioneer} shown={shown} playing={playing} waiting={pioneerWaiting} />
         <Column role="Follower" agent={followerAgent} entries={follower} shown={shown} playing={playing} waiting={followerWaiting} />
       </div>
     </div>

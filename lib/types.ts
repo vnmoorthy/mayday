@@ -1,4 +1,4 @@
-// Shared types for Mayday. These mirror supabase/migrations/0001_mayday.sql.
+// Shared types for Pioneer. These mirror supabase/migrations/0001_mayday.sql.
 
 export type Source = "live" | "seed" | "harvest";
 
@@ -9,7 +9,7 @@ export type Vendor = {
   domains: string[];
   claimed: boolean;
   claimed_at: string | null;
-  // Set only by Mayday after the claimant proves control of the vendor's domain.
+  // Set only by Pioneer after the claimant proves control of the vendor's domain.
   verified?: boolean;
   created_at: string;
 };
@@ -48,7 +48,7 @@ export type Site = {
 // One step of the black-box replay: what the agent tried and what happened.
 export type Attempt = { step: number; action: string; result: string };
 
-export type Mayday = {
+export type StopSignal = {
   id: string;
   site_id: string;
   agent: string;
@@ -89,7 +89,7 @@ export type Rescue = {
   created_at: string;
 };
 
-// What an agent gets back from `approach` or `mayday`.
+// What an agent gets back from `approach` or `signal`.
 export type Briefing = {
   known: boolean;
   headline: string;
@@ -102,14 +102,14 @@ export type Briefing = {
 
 export type SiteRef = Pick<Site, "id" | "slug" | "title" | "vendor" | "surface">;
 
-export type FeedMayday = Mayday & { site: SiteRef };
+export type FeedSignal = StopSignal & { site: SiteRef };
 export type FeedRescue = Rescue & { site: SiteRef };
 
 export type SiteDetail = {
   site: Site;
   vendor: Vendor;
   flares: Flare[];
-  maydays: Mayday[];
+  maydays: StopSignal[];
   rescues: Rescue[];
 };
 
@@ -136,8 +136,8 @@ export type Incident = {
   title: string;
   vendor: string;
   surface: string;
-  recent: number; // maydays inside the window
-  baseline: number; // expected maydays for a window of that length
+  recent: number; // stop signals inside the window
+  baseline: number; // expected stop signals for a window of that length
   ratio: number; // recent / baseline
   first_recent: string;
   last_recent: string;
@@ -152,7 +152,7 @@ export type AgentRow = {
   rescued: number;
   minutes_lost: number;
   sites: number;
-  live: number; // maydays that are not charted (seed) data
+  live: number; // stop signals that are not charted (seed) data
 };
 
 // A waggle route: a proven way to get a task done on a vendor's product.
@@ -201,7 +201,7 @@ export type MatchExplanation = {
   candidates: MatchCandidate[];
 };
 
-// A hosted test flight: a real model flying a scenario, with or without Mayday.
+// A hosted test flight: a real model flying a scenario, with or without Pioneer.
 export type FlightMode = "solo" | "pioneer" | "follower";
 
 export type FlightEvent = {

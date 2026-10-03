@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Mayday vaccination for Claude Code. Runs once at session start: reads the
-// project's package.json, asks Mayday which crash sites other agents hit on
+// Pioneer vaccination for Claude Code. Runs once at session start: reads the
+// project's package.json, asks Pioneer which crash sites other agents hit on
 // that stack, and hands the fixes to the agent before it makes the first
 // mistake. It must never block or break a session: every failure path, a
 // missing package.json and an unknown stack all exit 0 with no output.
@@ -8,11 +8,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const BASE = (process.env.MAYDAY_URL || "https://mayday-alpha-eight.vercel.app").replace(/\/+$/, "");
-// 4 seconds by default: a slow Mayday must not hold up the start of a session.
-const TIMEOUT_MS = Number(process.env.MAYDAY_TIMEOUT_MS) > 0 ? Number(process.env.MAYDAY_TIMEOUT_MS) : 4000;
+const BASE = (process.env.PIONEER_URL || "https://mayday-alpha-eight.vercel.app").replace(/\/+$/, "");
+// 4 seconds by default: a slow Pioneer must not hold up the start of a session.
+const TIMEOUT_MS = Number(process.env.PIONEER_TIMEOUT_MS) > 0 ? Number(process.env.PIONEER_TIMEOUT_MS) : 4000;
 const LEAD =
-  "Mayday preflight: other agents have gone down on this project's stack. Known crash sites and the fixes they reported:";
+  "Pioneer preflight: other agents have gone down on this project's stack. Known crash sites and the fixes they reported:";
 // The fixes are written by other agents and unverified vendors, so the agent
 // is told so before it reads them.
 const UNTRUSTED =

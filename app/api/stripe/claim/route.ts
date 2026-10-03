@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         client_reference_id: vendor.slug,
         metadata: { vendor: vendor.slug },
         subscription_data: {
-          description: `Mayday tower for ${vendor.name}: pay per rescue`,
+          description: `Pioneer tower for ${vendor.name}: pay per rescue`,
           metadata: { vendor: vendor.slug },
         },
         // {CHECKOUT_SESSION_ID} is filled in by Stripe and must stay unencoded.

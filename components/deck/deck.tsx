@@ -4,7 +4,7 @@ import { MotionConfig, motion, useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import { Hex } from "./comb";
 import { notes, SLIDE_TITLES } from "./notes";
-import { SLIDES, type MapState } from "./slides";
+import { SLIDES, type FlightState, type ModeStat } from "./slides";
 
 // The presentation shell: a fixed 1920x1080 stage scaled to fit the viewport
 // (letterboxed on the honey field), keyboard and click navigation, the slide index in
@@ -23,9 +23,8 @@ function pad(n: number) {
   return String(n).padStart(2, "0");
 }
 
-type MapPayload = {
-  vendors?: { name?: string; slug?: string; sites?: number; maydays?: number; rescues?: number }[];
-  sites?: { title?: string; vendor?: string; maydays_count?: number; minutes_lost?: number }[];
+type FlightPayload = {
+  stats?: { mode?: string; flights?: number | string; avg_failed_attempts?: number | string }[];
 };
 
 export function Deck() {
@@ -34,7 +33,7 @@ export function Deck() {
   const [index, setIndex] = useState(0);
   const [scale, setScale] = useState(1);
   const [notesOpen, setNotesOpen] = useState(false);
-  const [map, setMap] = useState<MapState>({ status: "loading" });
+  const [flight, setFlight] = useState<FlightState>({ status: "loading" });
 
   const go = useCallback((to: number) => setIndex(Math.max(0, Math.min(COUNT - 1, to))), []);
   const next = useCallback(() => setIndex((i) => Math.min(COUNT - 1, i + 1)), []);
@@ -64,47 +63,38 @@ export function Deck() {
     if (window.location.hash !== hash) window.history.replaceState(null, "", hash);
   }, [index, ready]);
 
-  // The live numbers for slides 5 and 6. Loaded up front so they are there
-  // when the presenter arrives, and refreshed on entering slide 5.
-  const loadMap = useCallback(async () => {
+  // The live scoreboard for slide 4: the running averages every flight on
+  // /live adds to. Loaded up front so it is there when the presenter arrives,
+  // and refreshed on entering slide 4. The slide stands without it.
+  const loadFlight = useCallback(async () => {
     try {
-      const res = await fetch("/api/v1/map", { cache: "no-store" });
-      if (!res.ok) throw new Error(`map ${res.status}`);
-      const data = (await res.json()) as MapPayload;
-      const vendors = Array.isArray(data.vendors) ? data.vendors : [];
-      if (vendors.length === 0) throw new Error("map empty");
-      const names = new Map(vendors.map((v) => [v.slug ?? "", v.name ?? v.slug ?? ""]));
-      const sum = (k: "sites" | "maydays" | "rescues") => vendors.reduce((a, v) => a + (Number(v[k]) || 0), 0);
-      const top = (Array.isArray(data.sites) ? data.sites : [])
-        .slice()
-        .sort((a, b) => (b.maydays_count ?? 0) - (a.maydays_count ?? 0))
-        .slice(0, 5)
-        .map((s) => ({
-          title: s.title ?? "",
-          vendor: names.get(s.vendor ?? "") || (s.vendor ?? ""),
-          maydays: s.maydays_count ?? 0,
-          hours: Math.round((s.minutes_lost ?? 0) / 60),
-        }));
-      setMap({
-        status: "ok",
-        maydays: sum("maydays"),
-        rescues: sum("rescues"),
-        sites: sum("sites"),
-        vendors: vendors.length,
-        top,
-      });
+      const res = await fetch("/api/v1/flight", { cache: "no-store" });
+      if (!res.ok) throw new Error(`flight ${res.status}`);
+      const data = (await res.json()) as FlightPayload;
+      const stats = Array.isArray(data?.stats) ? data.stats : [];
+      const pick = (mode: string): ModeStat | null => {
+        const s = stats.find((x) => x?.mode === mode);
+        if (!s || s.avg_failed_attempts == null) return null;
+        const avg = Number(s.avg_failed_attempts);
+        const flights = Number(s.flights);
+        return Number.isFinite(avg) && Number.isFinite(flights) && flights > 0 ? { avg, flights } : null;
+      };
+      const solo = pick("solo");
+      const follower = pick("follower");
+      if (!solo && !follower) throw new Error("flight stats empty");
+      setFlight({ status: "ok", solo, follower });
     } catch {
-      // Keep the last good numbers if a refresh fails.
-      setMap((m) => (m.status === "ok" ? m : { status: "error" }));
+      // Keep the last good scoreboard if a refresh fails.
+      setFlight((f) => (f.status === "ok" ? f : { status: "error" }));
     }
   }, []);
 
   useEffect(() => {
-    void loadMap();
-  }, [loadMap]);
+    void loadFlight();
+  }, [loadFlight]);
   useEffect(() => {
-    if (ready && index === 4) void loadMap();
-  }, [index, ready, loadMap]);
+    if (ready && index === 3) void loadFlight();
+  }, [index, ready, loadFlight]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -152,7 +142,7 @@ export function Deck() {
         onClick={onClick}
         role="region"
         aria-roledescription="slide deck"
-        aria-label={`Mayday presentation, slide ${index + 1} of ${COUNT}: ${SLIDE_TITLES[index]}`}
+        aria-label={`Pioneer presentation, slide ${index + 1} of ${COUNT}: ${SLIDE_TITLES[index]}`}
       >
         {ready ? (
           <div
@@ -173,14 +163,14 @@ export function Deck() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <Slide reduced={reduced} map={map} />
+              <Slide reduced={reduced} flight={flight} />
             </motion.div>
 
             {/* Footer: wordmark, key hints, counter, and the progress hairline. */}
             <div className="pointer-events-none absolute inset-x-[110px] bottom-[44px] flex items-center justify-between font-mono text-[19px] font-semibold uppercase tracking-[0.2em] text-[#54491a]">
               <span className="flex items-center gap-[12px]">
                 <Hex size={18} />
-                <span className="text-[#17130d]">Mayday</span>
+                <span className="text-[#17130d]">Pioneer</span>
                 <span className="ml-[20px] text-[15px] tracking-[0.16em]">Arrows move · N notes · F fullscreen</span>
               </span>
               <span className="tabular-nums text-[#54491a]">

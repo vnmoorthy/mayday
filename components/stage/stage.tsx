@@ -8,7 +8,7 @@ import { Bee } from "@/components/ui";
 import type { Rating } from "@/lib/airworthiness";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { mergeIncident, onIncident } from "@/components/tower/incident-feed";
-import type { Incident, Mayday, Rescue, Site, VendorStats } from "@/lib/types";
+import type { Incident, StopSignal, Rescue, Site, VendorStats } from "@/lib/types";
 import { BEE_NAME, JOIN_URL, JOIN_URL_SHORT } from "./presets";
 
 // The join address split where it reads naturally, for the two-line display.
@@ -39,8 +39,13 @@ const INCIDENT_POLL_MS = 60_000;
 const LIVE_POLL_MS = 15_000;
 const OFFLINE_POLL_MS = 4000;
 const PULSE_MS = 2800;
-// Below 48rem the hive lays its vendors out two by two, which fills a projector best.
-const HIVE_WIDTH = 760;
+// The hive is laid out at a fixed size per vendor cluster and then scaled to the
+// space it is given, so its captions grow with the projector.
+const CLUSTER_WIDTH = 260;
+// The hive's own padding, and the height of one vendor caption, in layout pixels.
+const HIVE_PAD_X = 32;
+const HIVE_PAD_Y = 36;
+const CAPTION_HEIGHT = 36;
 
 const SWATCH = {
   red: "radial-gradient(circle at 36% 30%, #ff7a7a, #c8102e 55%, #6d0718)",
@@ -60,8 +65,27 @@ function clock(iso: string): string {
   return d.toLocaleTimeString([], { hour12: false });
 }
 
-// Scales its child, laid out at a fixed width, to fill whatever box it is given.
-function Fit({ width, children }: { width: number; children: ReactNode }) {
+// How many columns of clusters fill a box best: the count that lets every
+// cluster be drawn largest. On a projector that is one or two rows.
+function bestColumns(count: number, aspect: number, aw: number, ah: number): number {
+  let best = 1;
+  let bestScale = 0;
+  for (let cols = 1; cols <= Math.max(1, count); cols++) {
+    const rows = Math.ceil(Math.max(1, count) / cols);
+    const w = cols * CLUSTER_WIDTH + HIVE_PAD_X;
+    const h = rows * (CLUSTER_WIDTH * aspect + CAPTION_HEIGHT) + HIVE_PAD_Y;
+    const scale = Math.min(aw / w, ah / h);
+    if (scale > bestScale + 1e-6) {
+      best = cols;
+      bestScale = scale;
+    }
+  }
+  return best;
+}
+
+// Lays the hive out in the number of columns that fills the box best, then
+// scales it to fit. `aspect` is one cluster's height over its width.
+function FitHive({ count, aspect, children }: { count: number; aspect: number; children: ReactNode }) {
   const outer = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<{ s: number; x: number; y: number } | null>(null);
@@ -73,8 +97,15 @@ function Fit({ width, children }: { width: number; children: ReactNode }) {
     const measure = () => {
       const aw = o.clientWidth;
       const ah = o.clientHeight;
+      if (!aw || !ah) return;
+      const cols = bestColumns(count, aspect, aw, ah);
+      const width = cols * CLUSTER_WIDTH + HIVE_PAD_X;
+      // Set the layout first, so the height read next belongs to it. React
+      // leaves these two alone: it only manages opacity and transform here.
+      i.style.width = `${width}px`;
+      i.style.setProperty("--stage-cols", String(cols));
       const h = i.offsetHeight;
-      if (!aw || !ah || !h) return;
+      if (!h) return;
       const s = Math.min(aw / width, ah / h);
       setBox({ s, x: (aw - width * s) / 2, y: (ah - h * s) / 2 });
     };
@@ -82,15 +113,15 @@ function Fit({ width, children }: { width: number; children: ReactNode }) {
     ro.observe(o);
     ro.observe(i);
     return () => ro.disconnect();
-  }, [width]);
+  }, [count, aspect]);
 
   return (
     <div ref={outer} className="relative min-h-0 flex-1 overflow-hidden">
       <div
         ref={inner}
-        className="pointer-events-none absolute left-0 top-0 origin-top-left transition-opacity duration-300"
+        // The hive picks its own columns from its width; the stage overrides that with the count chosen above.
+        className="pointer-events-none absolute left-0 top-0 origin-top-left transition-opacity duration-300 [&_.grid]:grid-cols-[repeat(var(--stage-cols,2),minmax(0,1fr))]!"
         style={{
-          width,
           opacity: box ? 1 : 0,
           transform: box ? `translate(${box.x}px, ${box.y}px) scale(${box.s})` : undefined,
         }}
@@ -189,7 +220,7 @@ export function Stage() {
     pulseTimers.current.push(window.setTimeout(() => setPulses((p) => p.filter((x) => x.key !== key)), PULSE_MS));
   }, []);
 
-  // Every mayday and rescue since the page opened passes through here exactly once.
+  // Every stop signal and rescue since the page opened passes through here exactly once.
   const announce = useCallback(
     (kind: PulseKind, row: Row) => {
       if (!row?.id || seenRef.current.has(row.id)) return;
@@ -293,7 +324,7 @@ export function Stage() {
 
     const channel = sb
       .channel(`stage-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "maydays" }, (p) => onInsert("mayday", p.new as Mayday))
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "maydays" }, (p) => onInsert("mayday", p.new as StopSignal))
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "rescues" }, (p) => onInsert("rescue", p.new as Rescue))
       .subscribe((s) => {
         if (cancelled) return;
@@ -332,7 +363,24 @@ export function Stage() {
   // --- derived -----------------------------------------------------------------
 
   // Alphabetical, so clusters never move as counts change (same as the home page).
-  const vendorRows = useMemo(() => [...vendors].sort((a, b) => a.name.localeCompare(b.name)), [vendors]);
+  // An airspace with no crash sites would be an empty comb on the projector, so it is left out.
+  const vendorRows = useMemo(() => {
+    const charted = new Set(sites.map((s) => s.vendor));
+    const shown = vendors.filter((v) => charted.has(v.slug));
+    // Two airspaces can share a display name. The room has to be able to tell
+    // them apart, so every airspace after the first is captioned with its slug.
+    const named = new Set<string>();
+    return [...shown]
+      .sort((a, b) => a.name.localeCompare(b.name) || a.slug.localeCompare(b.slug))
+      .map((v) => {
+        const key = v.name.toLowerCase();
+        if (!named.has(key)) {
+          named.add(key);
+          return v;
+        }
+        return { ...v, name: v.slug };
+      });
+  }, [vendors, sites]);
   const comb = useMemo(() => layoutComb(sites, vendorRows), [sites, vendorRows]);
   const fixes = useMemo(
     () => Object.fromEntries(Object.entries(ratings).map(([slug, r]) => [slug, r?.covered_sites ?? 0])),
@@ -350,23 +398,30 @@ export function Stage() {
 
   return (
     <div className="flex h-full w-full flex-col gap-[1.4vh] p-[1.6vw]">
-      {/* A spike takes the full width of the room, in red. */}
+      {/* A spike takes the full width of the room, in red. It is held to two
+          lines, so it never squeezes the join code off the bottom of the screen. */}
       {spike ? (
         <div
-          className="flex shrink-0 items-center gap-[1.4vw] rounded-2xl border-2 border-distress bg-distress px-[1.6vw] py-[1.6vh] text-comb shadow-[0_0_0_0.5vh_rgba(184,15,38,0.25)]"
+          className="flex shrink-0 items-center gap-[1.4vw] rounded-2xl border-2 border-distress bg-distress px-[1.6vw] py-[1.3vh] text-comb shadow-[0_0_0_0.5vh_rgba(184,15,38,0.25)]"
           role="alert"
           aria-live="assertive"
         >
           <span className="h-[3vh] w-[3vh] shrink-0 animate-flicker rounded-full bg-comb" aria-hidden />
-          <p className="min-w-0 text-[clamp(1.5rem,4.6vh,3.75rem)] font-extrabold leading-[1.02] tracking-[-0.03em]">
+          <p className="line-clamp-2 min-w-0 text-[clamp(1.25rem,3.9vh,3.25rem)] font-extrabold leading-[1.06] tracking-[-0.03em]">
             <span className="animate-flicker">SPIKE:</span> {spike.recent} agents down in the last {incidentWindow} min at{" "}
             {spikeTitle}
-            {incidents.length > 1 ? <span className="font-semibold opacity-80"> · +{incidents.length - 1} more</span> : null}
           </p>
-          <span className="ml-auto hidden shrink-0 text-right font-mono text-[clamp(0.7rem,1.5vh,1.05rem)] uppercase leading-snug tracking-[0.14em] text-comb/85 lg:block">
-            detected by a
-            <br />
-            database trigger
+          <span className="ml-auto shrink-0 text-right font-mono text-[clamp(0.7rem,1.5vh,1.05rem)] uppercase leading-snug tracking-[0.14em] text-comb/85">
+            {incidents.length > 1 ? (
+              <span className="block font-bold text-comb">
+                +{incidents.length - 1} more {incidents.length === 2 ? "site" : "sites"}
+              </span>
+            ) : null}
+            <span className="hidden lg:block">
+              detected by a
+              <br />
+              database trigger
+            </span>
           </span>
         </div>
       ) : null}
@@ -377,7 +432,7 @@ export function Stage() {
         <header className="flex items-end justify-between gap-6">
           <div className="flex items-center gap-[0.8vw]">
             <Bee className="h-[4.4vh] w-[5.2vh] text-ink" />
-            <h1 className="text-[clamp(1.75rem,5vh,3.75rem)] font-extrabold! leading-none text-ink">MAYDAY</h1>
+            <h1 className="text-[clamp(1.75rem,5vh,3.75rem)] font-extrabold! leading-none text-ink">PIONEER</h1>
             <span className="hidden pl-[0.6vw] text-[clamp(0.9rem,2vh,1.4rem)] font-semibold leading-none text-mute lg:inline">
               the stop signal for agents
             </span>
@@ -406,7 +461,7 @@ export function Stage() {
         </header>
 
         {loaded ? (
-          <Fit width={HIVE_WIDTH}>
+          <FitHive count={comb.clusters.length} aspect={comb.height / comb.width}>
             <Hive
               comb={comb}
               pulses={pulses}
@@ -416,7 +471,7 @@ export function Stage() {
               onToggleVendor={noop}
               onOpenSite={noop}
             />
-          </Fit>
+          </FitHive>
         ) : (
           <div className="flex min-h-0 flex-1 items-center justify-center rounded-3xl border border-ink/15 bg-panel">
             <span className="label animate-flicker text-[clamp(0.8rem,1.6vh,1.1rem)]!">Reading the hive…</span>
@@ -426,7 +481,7 @@ export function Stage() {
         <footer className="flex flex-col gap-[0.5vh]">
           <div className="tabular flex items-center justify-between gap-6 font-mono text-[clamp(0.65rem,1.3vh,0.9rem)] uppercase tracking-[0.14em] text-mute">
             <span className="min-w-0 truncate">
-              All time: {totals.maydays.toLocaleString("en-US")} maydays · {totals.rescues.toLocaleString("en-US")} rescues ·{" "}
+              All time: {totals.maydays.toLocaleString("en-US")} stop signals · {totals.rescues.toLocaleString("en-US")} rescues ·{" "}
               {sites.length} crash sites · counts mostly charted
             </span>
             <span className="shrink-0 whitespace-nowrap">f: fullscreen</span>
@@ -447,7 +502,7 @@ export function Stage() {
           </div>
         )}
 
-        <div className="rounded-2xl border border-ink/15 bg-panel px-[1.1vw] py-[1.6vh]">
+        <div className="shrink-0 rounded-2xl border border-ink/15 bg-panel px-[1.1vw] py-[1.6vh]">
           <div className="flex items-end justify-between gap-[1vw]">
             <Counter label="Bees down" value={String(down)} tone="distress" />
             <Counter label="Rescued" value={String(rescued)} tone="ink" />
@@ -489,7 +544,7 @@ export function Stage() {
           )}
         </div>
 
-        <div className="rounded-2xl border border-ink bg-panel px-[1.1vw] py-[1.5vh]">
+        <div className="shrink-0 rounded-2xl border border-ink bg-panel px-[1.1vw] py-[1.5vh]">
           <div className="flex items-center gap-[1.2vw]">
             <img
               src="/qr-join.svg"

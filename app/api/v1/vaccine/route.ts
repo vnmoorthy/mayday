@@ -118,7 +118,7 @@ export const POST = route(async (req) => {
   const withSites = vendors.filter((v) => v.sites.length);
   if (withSites.length) {
     lines.push(UNTRUSTED_HEADER, "");
-    lines.push(`Mayday vaccination for this stack (${withSites.map((v) => v.name).join(", ")}): crash sites to avoid, most agents down first.`);
+    lines.push(`Pioneer vaccination for this stack (${withSites.map((v) => v.name).join(", ")}): crash sites to avoid, most agents down first.`);
     for (const v of withSites) {
       const down = v.rating?.maydays ?? v.sites.reduce((n, s) => n + s.maydays_count, 0);
       const grade = v.rating && v.rating.score !== null ? ` Airworthiness ${v.rating.grade} (${v.rating.score}/100, provisional: mostly charted data).` : "";

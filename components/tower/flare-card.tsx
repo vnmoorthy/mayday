@@ -20,7 +20,7 @@ export function FlareCard({
 }: {
   flare: Flare;
   vendorName: string;
-  // True only when Mayday has verified the vendor that pinned the fix.
+  // True only when Pioneer has verified the vendor that pinned the fix.
   verified?: boolean;
   rateable?: boolean;
   onRated?: (flare: Flare) => void;

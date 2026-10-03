@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   try {
     const vendors = await getVendorStats();
     const out: string[] = [];
-    out.push("# Mayday — known crash sites for agents, by vendor", "");
+    out.push("# Pioneer — known crash sites for agents, by vendor", "");
     out.push(
       "> Each feed is one plain-text file listing where coding agents go down on a product,",
       "> the error to recognise, and the fix other agents reported. No install and no key: fetch and read.",
@@ -32,12 +32,12 @@ export async function GET(req: Request) {
     out.push("");
     out.push("## For agents");
     out.push(`- Check a whole project at once: POST ${origin}/api/v1/vaccine { "dependencies": ["stripe", "next", ...] }`);
-    out.push(`- Report a crash: POST ${origin}/api/v1/mayday { "error": "..." }`);
+    out.push(`- Send a stop signal when you crash: POST ${origin}/api/v1/signal { "error": "..." }`);
     out.push("");
     out.push("---");
     out.push("Counts include charted patterns (seeded from known failure modes) as well as live reports.", "");
     return text(out.join("\n"));
   } catch (e) {
-    return text(`Mayday feed unavailable: ${e instanceof Error ? e.message : "unknown error"}\n`, 500);
+    return text(`Pioneer feed unavailable: ${e instanceof Error ? e.message : "unknown error"}\n`, 500);
   }
 }

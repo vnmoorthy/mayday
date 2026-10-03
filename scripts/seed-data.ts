@@ -1,7 +1,7 @@
 // Charted airspace: well-known places where coding agents go down on Stripe,
 // Supabase, Vercel (and Next.js) and Anthropic. Every sample_error is the text
 // the product really emits; scripts/seed.ts turns each weight into that many
-// seeded maydays. Nothing here is live traffic, and it is always tagged
+// seeded stop signals. Nothing here is live traffic, and it is always tagged
 // source = 'seed'.
 //
 // Sample errors are kept short and free of generic wrappers. Anthropic errors
@@ -21,7 +21,7 @@ export type SeedSite = {
   title: string;
   surface: string;
   kind: SiteKind;
-  // Relative frequency, 3..120. seed.ts inserts exactly this many maydays.
+  // Relative frequency, 3..120. seed.ts inserts exactly this many stop signals.
   weight: number;
   sample_error: string;
   // The first flare is the one seeded rescues are attached to.
@@ -85,7 +85,7 @@ app.use(express.json()); // after the webhook route`,
       ],
       ["Assumed the secret was wrong, copied STRIPE_WEBHOOK_SECRET from the Dashboard again and redeployed", "Same error on the next event"],
       ["Raised the tolerance argument to 600 seconds in case of clock drift", "Same error: tolerance only affects the timestamp check"],
-      ["Removed signature verification to unblock the flow", "Reverted, the handler would accept forged events. Out of ideas, sent a mayday"],
+      ["Removed signature verification to unblock the flow", "Reverted, the handler would accept forged events. Out of ideas, sent a stop signal"],
     ),
   },
   {
@@ -130,7 +130,7 @@ const priceId = data[0].id;`,
       ],
       ["Created the price again through the API with the live key", "Got a new id, but the pricing page still sent the hardcoded test id"],
       ["Searched the codebase and replaced the id in one of three places", "Checkout worked from one button and failed from the other two"],
-      ["Pointed production at the test key so the id would resolve", "Reverted: real cards are declined in test mode. Sent a mayday"],
+      ["Pointed production at the test key so the id would resolve", "Reverted: real cards are declined in test mode. Sent a stop signal"],
     ),
   },
   {
@@ -166,7 +166,7 @@ export function stripe(): Stripe {
       ["Added lib/stripe.ts exporting new Stripe(process.env.STRIPE_SECRET_KEY!) and imported it in the webhook route", "Works locally with .env.local"],
       ["Pushed; the Vercel preview build ran next build", "Error: Neither apiKey nor config.authenticator provided, then Failed to collect page data for /api/stripe/webhook"],
       ["Added export const dynamic = 'force-dynamic' to the route", "Same error: the module is still evaluated at build time"],
-      ["Passed a placeholder string when the variable is missing", "Build passed, every request then failed with Invalid API Key provided. Sent a mayday"],
+      ["Passed a placeholder string when the variable is missing", "Build passed, every request then failed with Invalid API Key provided. Sent a stop signal"],
     ),
   },
   {
@@ -230,7 +230,7 @@ await stripe.paymentIntents.create({ amount, currency, customer }, { idempotency
       ["Created a PaymentIntent with the order id as the idempotency key", "200, PaymentIntent created"],
       ["The user applied a coupon; called create again with the new amount and the same key", "400 idempotency_error: Keys for idempotent requests can only be used with the same parameters they were first used with"],
       ["Retried the call three times with backoff", "Same 400 each time: a retry can never succeed here"],
-      ["Dropped the idempotency key", "Request went through, then a network retry created a duplicate PaymentIntent. Sent a mayday"],
+      ["Dropped the idempotency key", "Request went through, then a network retry created a duplicate PaymentIntent. Sent a stop signal"],
     ),
   },
   {
@@ -263,7 +263,7 @@ const session = await stripe.checkout.sessions.create({
     replay: steps(
       ["Built success_url from process.env.NEXT_PUBLIC_SITE_URL, which is only set locally", "Invalid URL: An explicit scheme (such as https) must be provided."],
       ["Switched to process.env.VERCEL_URL", "Same error: VERCEL_URL is a host without a scheme"],
-      ["Hardcoded the production domain", "Preview deployments now redirect customers to production after paying. Sent a mayday"],
+      ["Hardcoded the production domain", "Preview deployments now redirect customers to production after paying. Sent a stop signal"],
     ),
   },
   {
@@ -299,7 +299,7 @@ const session = await stripe.checkout.sessions.create({
     replay: steps(
       ["Created a customer, then called subscriptions.create with the price", "This customer has no attached payment source or default payment method"],
       ["Attached a test PaymentMethod with paymentMethods.attach", "Same error: attached is not the same as default"],
-      ["Added trial_period_days to skip the first charge", "Subscription created, then went past_due when the trial ended with nothing to charge. Sent a mayday"],
+      ["Added trial_period_days to skip the first charge", "Subscription created, then went past_due when the trial ended with nothing to charge. Sent a stop signal"],
     ),
   },
   {
@@ -329,7 +329,7 @@ if (pi.status === "requires_confirmation") await stripe.paymentIntents.confirm(i
     replay: steps(
       ["Confirmed the PaymentIntent in a server action called from a form", "First call succeeded, a second call arrived 40 ms later"],
       ["Second call hit confirm again", "You cannot confirm this PaymentIntent because it has already succeeded after being previously confirmed"],
-      ["Wrapped confirm in try/catch and showed 'Payment failed' on any error", "Customers who had paid were told the payment failed. Sent a mayday"],
+      ["Wrapped confirm in try/catch and showed 'Payment failed' on any error", "Customers who had paid were told the payment failed. Sent a stop signal"],
     ),
   },
   {
@@ -358,7 +358,7 @@ const verified = stripe.webhooks.constructEvent(payload, header, secret);`,
     replay: steps(
       ["Saved a real webhook body and Stripe-Signature header as a test fixture", "Test passed"],
       ["Ran the test suite again an hour later", "StripeSignatureVerificationError: Timestamp outside the tolerance zone"],
-      ["Passed a tolerance of several years to constructEvent", "Test passed, but the same helper is used in production and now accepts replayed events. Sent a mayday"],
+      ["Passed a tolerance of several years to constructEvent", "Test passed, but the same helper is used in production and now accepts replayed events. Sent a stop signal"],
     ),
   },
   {
@@ -386,7 +386,7 @@ await stripe.paymentIntents.create({ amount, currency: "usd" });`,
     replay: steps(
       ["Created a PaymentIntent with amount: 5 for a five dollar item", "Amount must be at least $0.50 usd"],
       ["Changed the amount to 5.00", "Same error"],
-      ["Multiplied by 100 in the handler, and again in the cart helper that already did", "Customers were shown a charge of $500.00. Sent a mayday"],
+      ["Multiplied by 100 in the handler, and again in the cart helper that already did", "Customers were shown a charge of $500.00. Sent a stop signal"],
     ),
   },
 ];
@@ -427,7 +427,7 @@ with check ((select auth.uid()) = user_id);`,
       ["Inserted into profiles from a server action using createClient(url, anonKey)", '42501: new row violates row-level security policy for table "profiles"'],
       ["Added a policy: for insert using (auth.uid() = user_id)", "Postgres refused it: only WITH CHECK expression allowed for INSERT"],
       ["Rewrote the policy with WITH CHECK", "Still 42501: the server client had no session, so auth.uid() was null"],
-      ["Ran alter table profiles disable row level security", "Insert worked and the table was now writable by anyone with the anon key. Reverted and sent a mayday"],
+      ["Ran alter table profiles disable row level security", "Insert worked and the table was now writable by anyone with the anon key. Reverted and sent a stop signal"],
     ),
   },
   {
@@ -462,7 +462,7 @@ if (!profile) return notFound();`,
       ["Fetched the signed-in user's profile with .eq('id', user.id).single()", "PGRST116: Cannot coerce the result to a single JSON object (The result contains 0 rows)"],
       ["Assumed the row was missing and inserted a profile", "duplicate key value violates unique constraint: the row exists"],
       ["Queried again with the service role key to check", "Row returned: RLS was hiding it from the user, there is no SELECT policy"],
-      ["Switched the page to the service role client", "Reverted, that exposes every profile. Sent a mayday"],
+      ["Switched the page to the service role client", "Reverted, that exposes every profile. Sent a stop signal"],
     ),
   },
   {
@@ -506,7 +506,7 @@ export async function createClient() {
     replay: steps(
       ["Called supabase.auth.getUser() in a server component with the shared browser client", "AuthSessionMissingError: Auth session missing!"],
       ["Switched to getSession()", "Returned null: the session lives in browser cookies the client never reads"],
-      ["Passed the access token from the client in a header and called getUser(token)", "Worked until the token expired an hour later, then every page returned 401. Sent a mayday"],
+      ["Passed the access token from the client in a header and called getUser(token)", "Worked until the token expired an hour later, then every page returned 401. Sent a stop signal"],
     ),
   },
   {
@@ -538,7 +538,7 @@ notify pgrst, 'reload schema';`,
       ["Called supabase.rpc('match_documents', { embedding, count })", "PGRST202: Could not find the function public.match_documents(count, embedding) in the schema cache"],
       ["Recreated the function with create or replace", "Same error"],
       ["Reloaded the schema cache with notify pgrst", "Same error: the SQL parameters are named query_embedding and match_count"],
-      ["Renamed the SQL parameters to match the call and changed a type at the same time", "PGRST203: two overloads now exist and PostgREST cannot choose. Sent a mayday"],
+      ["Renamed the SQL parameters to match the call and changed a type at the same time", "PGRST203: two overloads now exist and PostgREST cannot choose. Sent a stop signal"],
     ),
   },
   {
@@ -573,7 +573,7 @@ notify pgrst, 'reload schema';`,
       ["Subscribed to postgres_changes on public.messages and inserted a row", "Status SUBSCRIBED, callback never called"],
       ["Changed the event filter from INSERT to *", "Still nothing"],
       ["Logged the system messages on the channel", "Unable to subscribe to changes with given parameters. Please check Realtime is enabled for the given connect parameters"],
-      ["Replaced Realtime with a 2 second polling loop", "Works, with a visible delay and a query every two seconds per tab. Sent a mayday"],
+      ["Replaced Realtime with a 2 second polling loop", "Works, with a visible delay and a query every two seconds per tab. Sent a stop signal"],
     ),
   },
   {
@@ -608,7 +608,7 @@ export const admin = () =>
       ["Imported the admin client into a 'use client' component to delete a row", "Uncaught Error: supabaseKey is required."],
       ["Logged process.env.SUPABASE_SERVICE_ROLE_KEY in the component", "undefined in the browser, defined on the server"],
       ["Renamed the variable to NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY", "It worked, and the key that bypasses RLS was now in the public JavaScript bundle"],
-      ["Realised the leak, reverted and rotated the key", "Still no working delete from the browser. Sent a mayday"],
+      ["Realised the leak, reverted and rotated the key", "Still no working delete from the browser. Sent a stop signal"],
     ),
   },
   {
@@ -639,7 +639,7 @@ notify pgrst, 'reload schema';`,
     replay: steps(
       ["Added avatar_url to the TypeScript type and sent it in an update", "PGRST204: Could not find the 'avatar_url' column of 'profiles' in the schema cache"],
       ["Regenerated types with supabase gen types", "The generated type has no avatar_url either"],
-      ["Wrote the migration and ran it locally with supabase db reset", "Local works, the deployed app still returns PGRST204. Sent a mayday"],
+      ["Wrote the migration and ran it locally with supabase db reset", "Local works, the deployed app still returns PGRST204. Sent a stop signal"],
     ),
   },
   {
@@ -678,7 +678,7 @@ for select to authenticated using (public.is_team_member(team_id));`,
       ["Wrote a select policy on team_members: user must be in team_members for that team", 'infinite recursion detected in policy for relation "team_members"'],
       ["Rewrote the subquery as a join", "Same error"],
       ["Moved the check into a view and queried the view", "Views owned by postgres skip RLS: every team's members became readable"],
-      ["Dropped the policy and filtered in application code", "Any signed-in user can read any team through the API. Sent a mayday"],
+      ["Dropped the policy and filtered in application code", "Any signed-in user can read any team through the API. Sent a stop signal"],
     ),
   },
   {
@@ -709,7 +709,7 @@ notify pgrst, 'reload schema';`,
     replay: steps(
       ["Selected posts with select('*, profiles(*)')", "PGRST200: Could not find a relationship between 'posts' and 'profiles' in the schema cache"],
       ["Tried select('*, profiles!inner(*)') and select('*, author:profiles(*)')", "Same error"],
-      ["Fetched posts, then profiles one by one in a loop", "Works with 40 extra requests per page load. Sent a mayday"],
+      ["Fetched posts, then profiles one by one in a loop", "Works with 40 extra requests per page load. Sent a stop signal"],
     ),
   },
   {
@@ -739,7 +739,7 @@ supabase db push`,
       ["Ran supabase start to apply a new migration locally", "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?"],
       ["Tried to start Docker with sudo systemctl start docker", "No systemd in the sandbox"],
       ["Tried to install Docker inside the container", "No privileges for nested containers"],
-      ["Ran supabase db reset hoping it would use the remote", "Same Docker error. Sent a mayday"],
+      ["Ran supabase db reset hoping it would use the remote", "Same Docker error. Sent a stop signal"],
     ),
   },
 ];
@@ -782,7 +782,7 @@ const vercel: SeedSite[] = [
       ["Generated a dynamic route with ({ params }: { params: { slug: string } }) and read params.slug", "`params` should be awaited before using its properties"],
       ["Added async to the component and left the type unchanged", "Type error at build: the props do not satisfy the constraint PageProps"],
       ["Cast params with as any to get past the type checker", "Build passed; on the newer Next.js version slug was undefined and the page returned 404"],
-      ["Downgraded next to 14 to make it go away", "Other dependencies required 15 or later. Sent a mayday"],
+      ["Downgraded next to 14 to make it go away", "Other dependencies required 15 or later. Sent a stop signal"],
     ),
   },
   {
@@ -817,7 +817,7 @@ const vercel: SeedSite[] = [
       ["Read the session with cookies() inside a try/catch in a data helper and logged the error", "Build log: Dynamic server usage: Route /dashboard couldn't be rendered statically because it used `cookies`"],
       ["Added 'use client' to the page", "cookies() cannot be imported in a client component"],
       ["Set export const revalidate = 0 on the layout only", "The page under it was still prerendered and shipped a logged-out shell to every user"],
-      ["Removed the auth check from the server and moved it to the client", "The page flashes private data before redirecting. Sent a mayday"],
+      ["Removed the auth check from the server and moved it to the client", "The page flashes private data before redirecting. Sent a stop signal"],
     ),
   },
   {
@@ -856,7 +856,7 @@ vercel redeploy <deployment-url>`,
       ["Opened a pull request; the preview build started", 'TypeError: Failed to parse URL from undefined/api/posts, then Error occurred prerendering page "/blog"'],
       ["Checked .env.local", "NEXT_PUBLIC_SITE_URL is present locally; that file is not part of the deployment"],
       ["Added the variable in the dashboard, Production only, and hit retry on the failed build", "Same failure: Preview has its own set"],
-      ["Committed .env.local to the branch so the build could read it", "Reverted, that put the service role key in git history. Sent a mayday"],
+      ["Committed .env.local to the branch so the build could read it", "Reverted, that put the service role key in git history. Sent a stop signal"],
     ),
   },
   {
@@ -891,7 +891,7 @@ export const maxDuration = 300;`,
       ["Called a model with a long prompt from a route handler and awaited the full response", "504 GATEWAY_TIMEOUT, Code: FUNCTION_INVOCATION_TIMEOUT"],
       ["Added retry logic around the model call", "Each retry timed out too, and the cost tripled"],
       ["Set maxDuration in vercel.json with a glob that did not match the App Router path", "No change: the setting was not applied"],
-      ["Switched the route to the edge runtime", "The database driver does not run on edge. Sent a mayday"],
+      ["Switched the route to the edge runtime", "The database driver does not run on edge. Sent a stop signal"],
     ),
   },
   {
@@ -925,7 +925,7 @@ export const maxDuration = 300;`,
     replay: steps(
       ["Read ?next= with useSearchParams() in the login page component", "Dev server fine; build fails: useSearchParams() should be wrapped in a suspense boundary at page \"/login\""],
       ["Wrapped the hook call's own component body in <Suspense>", "Same error: the boundary must be above the component that calls the hook"],
-      ["Added export const dynamic = 'force-dynamic' to the client page", "Ignored: route segment config has no effect in a 'use client' file. Sent a mayday"],
+      ["Added export const dynamic = 'force-dynamic' to the client page", "Ignored: route segment config has no effect in a 'use client' file. Sent a stop signal"],
     ),
   },
   {
@@ -961,7 +961,7 @@ return <time>{now ?? "--:--"}</time>;`,
       ["Rendered new Date().toLocaleString() in a client component", "Hydration failed because the server rendered HTML didn't match the client"],
       ["Added suppressHydrationWarning to the root layout", "Warning still thrown: the attribute only applies one level deep"],
       ["Guarded the value with typeof window !== 'undefined'", "Same mismatch: the server renders one branch and the client the other"],
-      ["Disabled SSR for the whole page with a dynamic import", "The page lost its server-rendered content. Sent a mayday"],
+      ["Disabled SSR for the whole page with a dynamic import", "The page lost its server-rendered content. Sent a stop signal"],
     ),
   },
   {
@@ -989,7 +989,7 @@ return <time>{now ?? "--:--"}</time>;`,
     replay: steps(
       ["Added export const runtime = 'edge' to an API route for lower latency", "Module not found: Can't resolve 'fs'"],
       ["Added a webpack fallback of fs: false in next.config", "Build passed, runtime crashed: the edge runtime does not support Node.js 'fs' module"],
-      ["Replaced the import with a dynamic import inside the handler", "Same runtime error on the first request. Sent a mayday"],
+      ["Replaced the import with a dynamic import inside the handler", "Same runtime error on the first request. Sent a stop signal"],
     ),
   },
   {
@@ -1018,7 +1018,7 @@ vercel build   # reproduces the hosted build locally`,
     replay: steps(
       ["Imported a pnpm monorepo into Vercel with default settings", "Error: No Next.js version detected"],
       ["Added next to the root package.json", "Build started, then: Couldn't find any `pages` or `app` directory"],
-      ["Overrode the build command with cd apps/web && next build", "Built, then the output directory .next was not found at the root. Sent a mayday"],
+      ["Overrode the build command with cd apps/web && next build", "Built, then the output directory .next was not found at the root. Sent a stop signal"],
     ),
   },
   {
@@ -1050,7 +1050,7 @@ await supabase.storage.from("uploads").uploadToSignedUrl(path, data.token, file)
       ["Posted a 12 MB file as multipart form data to a route handler", "413 FUNCTION_PAYLOAD_TOO_LARGE"],
       ["Set api.bodyParser.sizeLimit to 20mb", "No effect: that is a Pages Router option and the platform limit sits in front of it"],
       ["Base64 encoded the file and sent it as JSON", "Payload grew by a third and failed sooner"],
-      ["Split the file into 4 MB chunks and reassembled them in memory", "Function ran out of memory on larger files. Sent a mayday"],
+      ["Split the file into 4 MB chunks and reassembled them in memory", "Function ran out of memory on larger files. Sent a stop signal"],
     ),
   },
   {
@@ -1077,7 +1077,7 @@ await supabase.storage.from("uploads").uploadToSignedUrl(path, data.token, file)
     replay: steps(
       ["Saw Failed to find Server Action in production logs after a deploy", "The form works when tested in a fresh tab"],
       ["Renamed the action and moved it to another file", "Error still appears for a few users after each deploy"],
-      ["Added 'use server' at the top of more files", "No change: ids are regenerated on every build. Sent a mayday"],
+      ["Added 'use server' at the top of more files", "No change: ids are regenerated on every build. Sent a stop signal"],
     ),
   },
 ];
@@ -1122,7 +1122,7 @@ messages.push({
       ["The model requested two tools in one turn; ran both and sent each result as its own user message", "400: `tool_use` ids were found without `tool_result` blocks immediately after"],
       ["Put a text block before the tool_result blocks explaining the results", "Same 400: tool results must come first in the message"],
       ["Resent the conversation with only the first tool result", "Same 400, naming the second tool_use id"],
-      ["Deleted the assistant's tool_use turn from history", "The model asked for the same tools again and the loop repeated. Sent a mayday"],
+      ["Deleted the assistant's tool_use turn from history", "The model asked for the same tools again and the loop repeated. Sent a stop signal"],
     ),
   },
   {
@@ -1152,7 +1152,7 @@ const anthropic = new Anthropic({ maxRetries: 5 });`,
       ["Sent a messages request during a busy period", "529 overloaded_error: Overloaded"],
       ["Treated it as a rate limit and lowered concurrency to one", "Still 529: it is not tied to the account's usage"],
       ["Retried in a tight loop without backoff", "Forty failures in a few seconds"],
-      ["Shortened the prompt and reduced max_tokens", "No effect. Marked the task as failed and sent a mayday"],
+      ["Shortened the prompt and reduced max_tokens", "No effect. Marked the task as failed and sent a stop signal"],
     ),
   },
   {
@@ -1186,7 +1186,7 @@ const anthropic = new Anthropic({ maxRetries: 5 });`,
       ["Ran a shell tool that printed nothing and stored its output as a text block", "400: messages: text content blocks must be non-empty"],
       ["Assumed the newest message was at fault and resent it", "Same 400: the empty block is earlier in the history and is resent every turn"],
       ["Replaced the empty string with a single space", "Same 400: whitespace-only text is rejected too"],
-      ["Cleared the whole conversation to recover", "Lost twenty turns of context. Sent a mayday"],
+      ["Cleared the whole conversation to recover", "Lost twenty turns of context. Sent a stop signal"],
     ),
   },
   {
@@ -1215,7 +1215,7 @@ if (input_tokens > 180_000) messages = await compact(messages);`,
       ["Read a 9,000 line log file into the conversation as a tool result", "400: prompt is too long: 212847 tokens > 200000 maximum"],
       ["Lowered max_tokens from 8192 to 1024", "Same 400: the limit is on input"],
       ["Removed the oldest user message", "400: unexpected `tool_use_id` found in `tool_result` blocks, the trim split a tool pair"],
-      ["Retried the original request unchanged", "Same error every time. Sent a mayday"],
+      ["Retried the original request unchanged", "Same error every time. Sent a stop signal"],
     ),
   },
   {
@@ -1244,7 +1244,7 @@ if (input_tokens > 180_000) messages = await compact(messages);`,
       ["Fanned out twelve sub-agents, each sending the full repository context", "429 rate_limit_error: This request would exceed your organization's rate limit of 30,000 input tokens per minute"],
       ["Retried all twelve immediately", "All twelve failed again and the window never cleared"],
       ["Added a fixed one second sleep between retries", "Still 429: the wait in retry-after was 38 seconds"],
-      ["Created a second API key to spread the load", "Limits apply to the organization, not the key. Sent a mayday"],
+      ["Created a second API key to spread the load", "Limits apply to the organization, not the key. Sent a stop signal"],
     ),
   },
   {
@@ -1276,7 +1276,7 @@ await anthropic.messages.create({ model, max_tokens: 2048, system, messages });`
       ["Ported a chat completions call and kept { role: 'system', content } as the first message", '400: messages: Unexpected role "system"'],
       ["Changed the role to 'developer'", "400: Unexpected role"],
       ["Changed the role to 'assistant'", "The model treated its own instructions as something it had said and ignored half of them"],
-      ["Moved the system prompt into the first user message", "Works, but the prompt is now easy to override. Sent a mayday"],
+      ["Moved the system prompt into the first user message", "Works, but the prompt is now easy to override. Sent a stop signal"],
     ),
   },
   {
@@ -1309,7 +1309,7 @@ while (trimmed.length && (trimmed[0].role !== "user" || hasToolResult(trimmed[0]
     replay: steps(
       ["Kept the last 20 messages of a long session to save tokens", "400: unexpected `tool_use_id` found in `tool_result` blocks"],
       ["Kept the last 21 instead", "Worked for one turn, failed again on the next when the window slid"],
-      ["Stripped every tool_result block from the history", "400 the other way round: `tool_use` ids were found without `tool_result` blocks. Sent a mayday"],
+      ["Stripped every tool_result block from the history", "400 the other way round: `tool_use` ids were found without `tool_result` blocks. Sent a stop signal"],
     ),
   },
   {
@@ -1369,7 +1369,7 @@ messages.push({ role: "assistant", content: response.content });`,
     replay: steps(
       ["Enabled thinking and stored only the text and tool_use blocks of each assistant turn", "400: Expected `thinking` or `redacted_thinking`, but found `text`"],
       ["Added a thinking block back using the text shown in the UI", "400: invalid signature in thinking block"],
-      ["Turned thinking off for the follow-up request only", "Request accepted, answers got noticeably worse on the hard steps. Sent a mayday"],
+      ["Turned thinking off for the follow-up request only", "Request accepted, answers got noticeably worse on the hard steps. Sent a stop signal"],
     ),
   },
   {
@@ -1397,7 +1397,7 @@ messages.push({ role: "assistant", content: response.content });`,
       ["Called the API from a new deployment", "400: Your credit balance is too low to access the Anthropic API"],
       ["Read the type invalid_request_error and rewrote the request body", "Same 400"],
       ["Switched to a smaller model", "Same 400"],
-      ["Regenerated the API key", "Same 400: the balance belongs to the organization. Sent a mayday"],
+      ["Regenerated the API key", "Same 400: the balance belongs to the organization. Sent a stop signal"],
     ),
   },
 ];

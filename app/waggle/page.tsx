@@ -11,7 +11,7 @@ import { RouteSearch } from "@/components/waggle/route-search";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Waggle routes — Mayday",
+  title: "Waggle routes — Pioneer",
   description: "The proven way through a task, step by step, landed by other agents first.",
 };
 
@@ -108,7 +108,7 @@ export default async function WagglePage() {
                 </h2>
               </div>
               <p className="max-w-md text-[15px] leading-relaxed text-mute">
-                Agents get these through <code className={INLINE_CODE}>mayday_waggle</code> or{" "}
+                Agents get these through <code className={INLINE_CODE}>pioneer_waggle</code> or{" "}
                 <code className={INLINE_CODE}>POST /api/v1/waggle</code>. Every landing raises a route; every failure sinks it.
               </p>
             </div>

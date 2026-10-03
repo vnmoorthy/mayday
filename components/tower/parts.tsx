@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Badge } from "@/components/ui";
 import { gradeTone, type Grade } from "@/lib/airworthiness";
 import { minutesToHuman, rescueRate } from "@/lib/format";
-import type { Attempt, Mayday, Source } from "@/lib/types";
+import type { Attempt, StopSignal, Source } from "@/lib/types";
 import { Ago } from "./ago";
 
 // Presentational pieces shared by the tower and the public crash-site page.
@@ -34,7 +34,7 @@ export function SourceBadge({ source }: { source: Source }) {
 }
 
 // Data colours. Colour only ever means something: blue is rescue, burnt honey
-// is an official fix, red is a mayday.
+// is an official fix, red is a stop signal.
 const TONE_TEXT = { rescue: "text-rescue", flare: "text-flare", distress: "text-distress", mute: "text-dim", ink: "text-ink" } as const;
 const TONE_BG = { rescue: "bg-rescue", flare: "bg-flare", distress: "bg-distress", mute: "bg-dim", ink: "bg-ink" } as const;
 export type MeterTone = keyof typeof TONE_BG;
@@ -187,7 +187,7 @@ export function NotConnected({ message }: { message: string }) {
       <span className="label text-distress!">Not connected</span>
       <h1 className="max-w-3xl text-5xl font-extrabold! text-ink sm:text-7xl">The tower cannot reach the database</h1>
       <p className="max-w-2xl text-base text-mute">
-        Mayday reads crash sites from Supabase. Set <code className="font-mono font-semibold text-ink">NEXT_PUBLIC_SUPABASE_URL</code>,{" "}
+        Pioneer reads crash sites from Supabase. Set <code className="font-mono font-semibold text-ink">NEXT_PUBLIC_SUPABASE_URL</code>,{" "}
         <code className="font-mono font-semibold text-ink">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> and{" "}
         <code className="font-mono font-semibold text-ink">SUPABASE_SERVICE_ROLE_KEY</code>, apply the migration, then reload.
       </p>
@@ -196,7 +196,7 @@ export function NotConnected({ message }: { message: string }) {
   );
 }
 
-const OUTCOME: Record<Mayday["outcome"], { label: string; tone: "distress" | "rescue" | "radar" }> = {
+const OUTCOME: Record<StopSignal["outcome"], { label: string; tone: "distress" | "rescue" | "radar" }> = {
   down: { label: "down", tone: "distress" },
   rescued: { label: "rescued", tone: "rescue" },
   self_recovered: { label: "self-recovered", tone: "radar" },
@@ -211,7 +211,7 @@ function cleanAttempts(raw: unknown): Attempt[] {
 
 // One black-box replay: what the agent tried, step by step, before it went
 // down. A numbered list joined by a hairline, the way a flight log reads.
-export function Replay({ mayday }: { mayday: Mayday }) {
+export function Replay({ mayday }: { mayday: StopSignal }) {
   const attempts = cleanAttempts(mayday.attempts);
   const outcome = OUTCOME[mayday.outcome] ?? OUTCOME.down;
   return (
@@ -242,7 +242,7 @@ export function Replay({ mayday }: { mayday: Mayday }) {
           ))}
         </ol>
       ) : (
-        <p className="mt-3 text-xs text-mute">This agent sent a mayday without a black box, so there are no steps to replay.</p>
+        <p className="mt-3 text-xs text-mute">This agent sent a stop signal without a black box, so there are no steps to replay.</p>
       )}
     </article>
   );

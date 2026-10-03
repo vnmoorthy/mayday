@@ -8,7 +8,7 @@ import { AgentsClient, type VendorRef } from "@/components/agents/agents-client"
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Agents and models — Mayday",
+  title: "Agents and models — Pioneer",
   description: "Which coding agents and models go down, and on which vendors.",
 };
 
@@ -35,7 +35,7 @@ export default async function AgentsPage() {
         </div>
         <div className="lg:col-span-4">
           <p className="text-[15px] leading-relaxed text-mute">
-            Every mayday names the agent that sent it and the model it was running. This page adds them up: which agents crash
+            Every stop signal names the agent that sent it and the model it was running. This page adds them up: which agents crash
             most, which vendors they crash on, and how often another agent&rsquo;s flare got them through.
           </p>
         </div>

@@ -7,7 +7,7 @@ import { BEE_NAME, PRESETS, type Preset } from "./presets";
 
 // Audience mode, phone side. One tap turns a person in the room into a bee:
 // it flies into a real failure, gets the briefing every agent gets, and
-// confirms the rescue. Every tap is a real mayday through the real API, so the
+// confirms the rescue. Every tap is a real stop signal through the real API, so the
 // big screen at /stage lights up. There is no text input on this page.
 
 // --- the bee: a name and two running totals, kept in localStorage ------------
@@ -81,7 +81,7 @@ const noBee = () => null;
 
 const TIMEOUT_MS = 15_000;
 const RATE_LIMITED = "Rate limit reached, try again in a minute.";
-const DUPLICATE_RESCUE = "Already confirmed: a mayday can only be rescued, and billed, once.";
+const DUPLICATE_RESCUE = "Already confirmed: a stop signal can only be rescued, and billed, once.";
 
 async function post<T>(path: string, body: unknown): Promise<T> {
   const ctl = new AbortController();
@@ -140,7 +140,7 @@ const QUIET_BUTTON =
 export function Join() {
   const bee = useSyncExternalStore(subscribe, readBee, noBee);
   const [phase, setPhase] = useState<Phase>({ at: "pick" });
-  // A double tap must not send two maydays.
+  // A double tap must not send two stop signals.
   const inFlight = useRef(false);
 
   const fly = useCallback(
@@ -158,7 +158,7 @@ export function Join() {
         bump("down");
         setPhase({ at: "briefed", preset, briefing, flare: topFlare(briefing.flares), busy: false, error: null });
       } catch (e) {
-        setPhase({ at: "failed", preset, error: e instanceof Error ? e.message : "The mayday did not go out." });
+        setPhase({ at: "failed", preset, error: e instanceof Error ? e.message : "The stop signal did not go out." });
       } finally {
         inFlight.current = false;
       }
@@ -198,7 +198,7 @@ export function Join() {
       <header className="flex items-center justify-between gap-3">
         <span className="flex items-center gap-2">
           <Bee className="h-6 w-7 text-ink" />
-          <span className="text-base font-extrabold tracking-[-0.03em] text-ink">MAYDAY</span>
+          <span className="text-base font-extrabold tracking-[-0.03em] text-ink">PIONEER</span>
         </span>
         <span className="label tabular whitespace-nowrap" aria-live="polite">
           Down {bee?.down ?? 0} · Rescued {bee?.rescued ?? 0}
@@ -265,14 +265,14 @@ export function Join() {
               </div>
             );
           })}
-          <p className="pt-1 text-center text-sm text-mute">One tap sends a real mayday. Nothing to type.</p>
+          <p className="pt-1 text-center text-sm text-mute">One tap sends a real stop signal. Nothing to type.</p>
         </section>
       ) : null}
 
       {phase.at === "failed" ? (
         <section className="flex flex-col gap-4" aria-live="assertive">
           <div className="rounded-2xl border border-distress/60 bg-distress/10 px-5 py-4">
-            <span className="label">Mayday not sent</span>
+            <span className="label">Stop signal not sent</span>
             <p className="mt-2 text-lg font-semibold leading-snug text-ink">{phase.error}</p>
           </div>
           <button type="button" className={BIG_BUTTON} onClick={() => void fly(phase.preset)}>
@@ -287,7 +287,7 @@ export function Join() {
       {phase.at === "briefed" ? (
         <section className="flex flex-col gap-4" aria-live="polite">
           <div className="rounded-2xl border border-distress/60 bg-distress/10 px-5 py-4">
-            <span className="label">Mayday sent · {phase.preset.product}</span>
+            <span className="label">Stop signal sent · {phase.preset.product}</span>
             <p className="mt-2 break-words font-mono text-[12px] leading-relaxed text-ink/80">{phase.preset.gist}</p>
           </div>
 
@@ -326,7 +326,7 @@ export function Join() {
             <div className="rounded-2xl border border-dashed border-ink/40 px-5 py-4">
               <p className="text-lg font-semibold leading-snug text-ink">No fix here yet.</p>
               <p className="mt-1 text-base leading-snug text-mute">
-                Your mayday is on the map, and the vendor can see it. The next bee will know this path is trouble.
+                Your stop signal is on the map, and the vendor can see it. The next bee will know this path is trouble.
               </p>
             </div>
           )}
@@ -355,7 +355,7 @@ export function Join() {
               <span className="label">{phase.preset.product} · exactly once</span>
               <h2 className="mt-2 text-[2.1rem] font-extrabold! leading-[1.02] text-ink">Already confirmed.</h2>
               <p className="mt-3 text-xl font-semibold leading-snug text-ink">{DUPLICATE_RESCUE}</p>
-              <p className="mt-2 text-base leading-snug text-mute">Nothing was counted twice. Fly again to send a new mayday.</p>
+              <p className="mt-2 text-base leading-snug text-mute">Nothing was counted twice. Fly again to send a new stop signal.</p>
             </div>
           ) : (
             <div className="rounded-2xl border border-ink bg-comb px-5 py-6">

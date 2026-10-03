@@ -132,7 +132,7 @@ function CandidateRow({
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full border border-ink/30 px-2.5 py-0.5 font-mono text-[11px] text-ink">{c.vendor}</span>
           <span className="tabular text-xs text-mute">
-            {c.maydays_count.toLocaleString("en-US")} {c.maydays_count === 1 ? "mayday" : "maydays"} on record
+            {c.maydays_count.toLocaleString("en-US")} {c.maydays_count === 1 ? "stop signal" : "stop signals"} on record
           </span>
         </div>
       </div>
@@ -383,7 +383,7 @@ export function MatchExplainer({
                         : "There is no crash site to compare with. "}
                       {scoped
                         ? `You limited the search to ${vendorName(scoped)}. report_mayday() would look across every airspace next, and only then open a new site; choose Auto to see that ranking.`
-                        : "report_mayday() would open a crash site for this error and count this as its first mayday. This page is read-only, so nothing was opened."}
+                        : "report_mayday() would open a crash site for this error and count this as its first stop signal. This page is read-only, so nothing was opened."}
                     </span>
                   </div>
                 </div>
@@ -398,7 +398,7 @@ export function MatchExplainer({
               ) : null}
 
               <p className="max-w-3xl text-sm leading-relaxed text-mute">
-                The score is the greatest of the four terms, not their sum. Ties go to the site with more maydays on record, and only the top row
+                The score is the greatest of the four terms, not their sum. Ties go to the site with more stop signals on record, and only the top row
                 can win.{" "}
                 {scoped
                   ? `These rows are limited to the ${vendorName(scoped)} airspace because you chose it.`

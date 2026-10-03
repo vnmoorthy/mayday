@@ -4,7 +4,7 @@ import { Ago } from "./ago";
 
 // Truthful labels shared by the towers, the crash-site page and the hive map.
 
-// A pinned fix is the vendor's word only when Mayday itself verified the
+// A pinned fix is the vendor's word only when Pioneer itself verified the
 // vendor. A paid claim proves a Checkout session, nothing more.
 export function pinnedLabel(vendorName: string, verified?: boolean | null): string {
   return `Pinned by the ${vendorName} tower · ${verified === true ? "verified vendor" : "claim not verified"}`;

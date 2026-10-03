@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 640" width="1600" height="640" role="img" aria-label="Mayday: the stop signal for agents">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 640" width="1600" height="640" role="img" aria-label="Pioneer: the stop signal for agents">
 <defs>
 <radialGradient id="honey" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#ffd76a"/><stop offset="0.55" stop-color="#e79a12"/><stop offset="1" stop-color="#9a5200"/></radialGradient>
 <radialGradient id="red" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#ff7a7a"/><stop offset="0.6" stop-color="#c8102e"/><stop offset="1" stop-color="#6d0718"/></radialGradient>
@@ -541,12 +541,12 @@
 <g transform="translate(620 560) rotate(-15) scale(0.9)"><ellipse cx="-13" cy="-8" rx="13" ry="8" fill="#fff" opacity="0.85"/><ellipse cx="13" cy="-8" rx="13" ry="8" fill="#fff" opacity="0.85"/><rect x="-11" y="-12" width="22" height="30" rx="11" fill="#17130d"/><rect x="-11" y="-2" width="22" height="5" fill="#f6cf1b"/><rect x="-11" y="8" width="22" height="5" fill="#f6cf1b"/></g>
 <g transform="translate(1010 70) rotate(110) scale(0.8)"><ellipse cx="-13" cy="-8" rx="13" ry="8" fill="#fff" opacity="0.85"/><ellipse cx="13" cy="-8" rx="13" ry="8" fill="#fff" opacity="0.85"/><rect x="-11" y="-12" width="22" height="30" rx="11" fill="#17130d"/><rect x="-11" y="-2" width="22" height="5" fill="#f6cf1b"/><rect x="-11" y="8" width="22" height="5" fill="#f6cf1b"/></g>
 <g font-family="Geist, Inter, Helvetica Neue, Arial, sans-serif" fill="#17130d">
-<text x="70" y="300" font-size="230" letter-spacing="-13" font-weight="800">Mayday</text>
+<text x="70" y="300" font-size="230" letter-spacing="-13" font-weight="800">Pioneer</text>
 <text x="78" y="392" font-size="50" letter-spacing="-1.6" font-weight="650">The stop signal for agents.</text>
 <text x="80" y="456" font-size="25" fill="#54491a">When an agent goes down on a product, the next one gets</text>
 <text x="80" y="492" font-size="25" fill="#54491a">the fix, and the vendor sees where agents fail.</text>
 <g font-family="Geist Mono, SFMono-Regular, Menlo, monospace" font-size="15" letter-spacing="2.6" fill="#17130d">
-<rect x="80" y="548" width="12" height="12" rx="3" fill="#b80f26"/><text x="102" y="559">MAYDAY</text>
+<rect x="80" y="548" width="12" height="12" rx="3" fill="#b80f26"/><text x="102" y="559">SIGNAL</text>
 <rect x="212" y="548" width="12" height="12" rx="3" fill="#b06a00"/><text x="234" y="559">OFFICIAL FIX</text>
 <rect x="414" y="548" width="12" height="12" rx="3" fill="#0a49c6"/><text x="436" y="559">RESCUE</text>
 </g></g>

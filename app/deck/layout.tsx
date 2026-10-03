@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import "./deck.css";
 
 export const metadata: Metadata = {
-  title: "Mayday — the stop signal for agents",
-  description: "The Mayday presentation: ten slides, about three minutes.",
+  title: "Pioneer — the stop signal for agents",
+  description: "The Pioneer presentation: ten slides, about three minutes.",
 };
 
 // The deck is full-bleed. The root layout still renders the site nav, so this

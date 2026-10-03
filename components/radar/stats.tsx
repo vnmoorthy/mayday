@@ -5,7 +5,7 @@ import { useReducedMotion } from "framer-motion";
 import { rescueRate } from "@/lib/format";
 
 // The five instrument readouts under the hero: one open row, divided by
-// hairlines. Values tween when they change so a new mayday is visible from the
+// hairlines. Values tween when they change so a new stop signal is visible from the
 // back of the room.
 
 function useTween(value: number): number {
@@ -35,7 +35,7 @@ function useTween(value: number): number {
   return display;
 }
 
-// Colour marks the data kind only: red for maydays, near-black for rescues, burnt honey for time saved.
+// Colour marks the data kind only: red for stop signals, near-black for rescues, burnt honey for time saved.
 type Mark = "distress" | "rescue" | "flare" | null;
 
 // Two columns on a phone (the fifth figure spans both), five in a row on
@@ -121,7 +121,7 @@ export function StatStrip({
         value={maydays}
         format={whole}
         mark="distress"
-        hint={`maydays across ${sites.toLocaleString("en-US")} crash ${sites === 1 ? "site" : "sites"}`}
+        hint={`stop signals across ${sites.toLocaleString("en-US")} crash ${sites === 1 ? "site" : "sites"}`}
       />
       <Readout index={1} label="Rescued" value={rescues} format={whole} mark="rescue" hint="agents a flare got back in the air" />
       <Readout
@@ -130,7 +130,7 @@ export function StatStrip({
         value={rescueRate(maydays, rescues)}
         format={(v) => `${Math.round(v)}%`}
         mark={null}
-        hint="rescues per mayday"
+        hint="rescues per stop signal"
       />
       <Readout index={3} label="Agent-hours lost" value={minutes} format={hours} mark={null} hint="time agents burned before help" />
       <Readout index={4} label="Agent-hours saved" value={saved} format={hours} mark="flare" hint="time the hive gave back with a fix" />
