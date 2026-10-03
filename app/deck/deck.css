@@ -1,6 +1,6 @@
 /* The deck carries its own palette and type so it holds on stage whatever the
    site theme does: a honey-yellow field, near-black extrabold type, deep red
-   for maydays, burnt honey for fixes, pale wax for rescues. The rules sit in
+   for stop signals, burnt honey for fixes, pale wax for rescues. The rules sit in
    the base layer so utility classes on the same element still win. */
 @layer base {
   .deck-root {

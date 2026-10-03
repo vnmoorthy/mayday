@@ -541,7 +541,7 @@ function LiveSlide({ reduced }: SlideProps) {
 // ---------------------------------------------------------------- 6 agent
 
 const LOOP: { n: string; text: ReactNode; color: string; hex: string }[] = [
-  { n: "1", text: <>Agent goes down {ARROW} mayday</>, color: RED, hex: RED },
+  { n: "1", text: <>Agent goes down {ARROW} stop signal</>, color: RED, hex: RED },
   { n: "2", text: "Postgres finds the crash site", color: INK, hex: INK },
   { n: "3", text: "Briefing, wrapped as untrusted content", color: HONEY, hex: HONEY },
   { n: "4", text: "Rescue, exactly once", color: INK, hex: WAX },
@@ -865,7 +865,7 @@ const NODES = [
   { x: 2, y: 180, w: 250, h: 96, title: "GEMINI", sub: "flights · drafts" },
 ];
 const WIRES = [
-  { d: "M252 56 H424", hx: 424, hy: 56, label: "mayday", lx: 338, ly: 40, color: RED },
+  { d: "M252 56 H424", hx: 424, hy: 56, label: "stop signal", lx: 338, ly: 40, color: RED },
   { d: "M762 56 H934", hx: 934, hy: 56, label: "one SQL call", lx: 848, ly: 40, color: INK },
   { d: "M1272 56 H1444", hx: 1444, hy: 56, label: "trigger", lx: 1358, ly: 40, color: INK },
   { d: "M597 104 V228 H934", hx: 934, hy: 228, label: "per rescue", lx: 770, ly: 212, color: INK },
@@ -950,7 +950,7 @@ function BuiltSlide({ reduced }: SlideProps) {
         </div>
         <Rise delay={1.2} y={10} className="mt-[32px] flex">
           <span className="terminal rounded-full px-[28px] py-[12px] font-mono text-[24px] tracking-[0.02em]">
-            A mayday is one SQL transaction.
+            A stop signal is one SQL transaction.
           </span>
         </Rise>
       </div>

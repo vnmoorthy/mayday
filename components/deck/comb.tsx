@@ -8,7 +8,7 @@ import type { CSSProperties } from "react";
 
 export type CellState = "idle" | "hit" | "honey" | "wax";
 
-// The deck palette: a honey-yellow field and near-black type. Red is a mayday,
+// The deck palette: a honey-yellow field and near-black type. Red is a stop signal,
 // burnt honey is a fix, and a rescued cell is capped in pale wax with a dark
 // outline.
 export const DECK_COLORS = {
