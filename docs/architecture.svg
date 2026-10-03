@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="t d">
+  <title id="t">Mayday architecture</title>
+  <desc id="d">Agents (any MCP client, the Claude Code plugin, test flights) call Mayday on Vercel (MCP server, HTTP API, data access, hive map and towers, badge, Stripe billing), which calls SQL functions in Supabase Postgres with the service role key and talks to Stripe Checkout and Billing Meters. Realtime pushes inserts back to the hive map.</desc>
+  <defs>
+    <pattern id="comb" width="56" height="97" patternUnits="userSpaceOnUse">
+      <path d="M28 0 56 16.2v32.3L28 64.7 0 48.5V16.2ZM28 64.7V97M0 48.5v32.3M56 48.5v32.3" fill="none" stroke="#0e0e0e" stroke-width="1"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 10 5 0 10Z" fill="#f4f4f2"/>
+    </marker>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; }
+      .sect { font-size: 15px; letter-spacing: 0.16em; fill: #8f8f8a; }
+      .ttl  { font-size: 17px; letter-spacing: 0.08em; fill: #f4f4f2; }
+      .det  { font-size: 15px; fill: #8f8f8a; }
+      .lbl  { font-size: 14px; letter-spacing: 0.06em; fill: #f4f4f2; }
+      .cmd  { font-size: 14px; fill: #f4f4f2; }
+      .honey { fill: #f5a524; }
+      .box  { fill: #000000; stroke: #f4f4f2; stroke-width: 1; }
+      .group { fill: none; stroke: #343434; stroke-width: 1; }
+      .core { fill: #000000; stroke: #f5a524; stroke-width: 1.5; }
+      .wire { fill: none; stroke: #f4f4f2; stroke-width: 1.25; }
+    </style>
+  </defs>
+
+  <!-- field -->
+  <rect width="1600" height="900" fill="#000000"/>
+  <rect width="1600" height="900" fill="url(#comb)"/>
+
+  <!-- header -->
+  <path d="M56 38 73 48v20L56 78 39 68V48Z" fill="#f5a524"/>
+  <text x="92" y="57" class="mono" font-size="26" letter-spacing="0.14em" fill="#f4f4f2">MAYDAY</text>
+  <text x="92" y="80" class="mono sect">ARCHITECTURE · THE STOP SIGNAL FOR AGENTS</text>
+  <line x1="40" y1="100" x2="1560" y2="100" stroke="#1f1f1f" stroke-width="1"/>
+
+  <!-- ================= AGENTS ================= -->
+  <text x="40" y="130" class="mono sect">AGENTS</text>
+
+  <rect x="40" y="170" width="310" height="76" class="box"/>
+  <text x="56" y="201" class="mono ttl">ANY MCP CLIENT</text>
+  <text x="56" y="228" class="mono det">Cursor · AI SDK · eve</text>
+
+  <rect x="40" y="274" width="310" height="126" class="box"/>
+  <rect x="56" y="293" width="10" height="10" fill="#d97757"/>
+  <text x="76" y="304" class="mono ttl">CLAUDE CODE PLUGIN</text>
+  <text x="56" y="332" class="mono det">hooks/mayday-hook.mjs</text>
+  <text x="56" y="355" class="mono det">skills/mayday · .mcp.json</text>
+  <text x="56" y="378" class="mono det">failed Bash command → mayday</text>
+
+  <rect x="40" y="480" width="310" height="126" class="box"/>
+  <text x="56" y="510" class="mono ttl">TEST FLIGHTS</text>
+  <text x="56" y="538" class="mono det">scripts/test-flight.mjs</text>
+  <text x="56" y="561" class="mono det">trap scenarios in flights/</text>
+  <text x="56" y="584" class="mono det">source = harvest</text>
+
+  <!-- test flight launches the plugin -->
+  <path d="M120 480V401" class="wire" marker-end="url(#arrow)"/>
+  <text x="136" y="446" class="mono cmd">claude -p --plugin-dir</text>
+
+  <!-- agents to Mayday -->
+  <path d="M350 208H589" class="wire" marker-end="url(#arrow)"/>
+  <text x="364" y="198" class="mono lbl">TOOL CALL</text>
+
+  <path d="M350 312H589" class="wire" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+  <text x="364" y="302" class="mono lbl">FAILED COMMAND</text>
+  <text x="364" y="332" class="mono lbl" fill-opacity="0.7">BRIEFING BACK</text>
+
+  <path d="M350 548H530V338H589" class="wire" marker-end="url(#arrow)"/>
+  <text x="364" y="538" class="mono lbl">HARVEST SUMMARY</text>
+
+  <!-- ================= MAYDAY ON VERCEL ================= -->
+  <rect x="570" y="113" width="10" height="10" fill="#e6edf3"/>
+  <text x="590" y="130" class="mono sect honey">MAYDAY ON VERCEL · NEXT.JS 16</text>
+  <rect x="570" y="146" width="400" height="644" fill="none" stroke="#f5a524" stroke-width="1"/>
+
+  <rect x="590" y="170" width="310" height="76" class="box"/>
+  <text x="606" y="201" class="mono ttl">MCP SERVER</text>
+  <text x="606" y="228" class="mono det">/api/mcp · 6 tools</text>
+
+  <rect x="590" y="274" width="310" height="76" class="box"/>
+  <text x="606" y="305" class="mono ttl">HTTP API</text>
+  <text x="606" y="332" class="mono det">/api/v1/* · zod validation</text>
+
+  <!-- both funnel into data access -->
+  <path d="M900 208H925V377" class="wire" marker-end="url(#arrow)"/>
+  <path d="M900 312H925" class="wire"/>
+
+  <rect x="590" y="378" width="360" height="76" class="core"/>
+  <text x="606" y="409" class="mono ttl honey">DATA ACCESS</text>
+  <text x="606" y="436" class="mono det">lib/data.ts · lib/signature.ts</text>
+
+  <path d="M640 482V455" class="wire" marker-end="url(#arrow)"/>
+  <text x="656" y="474" class="mono lbl">READS</text>
+
+  <rect x="590" y="482" width="360" height="76" class="box"/>
+  <text x="606" y="513" class="mono ttl">HIVE MAP · TOWERS · COCKPIT</text>
+  <text x="606" y="540" class="mono det">server components + Realtime</text>
+
+  <rect x="590" y="586" width="360" height="76" class="box"/>
+  <text x="606" y="617" class="mono ttl">AIRWORTHINESS BADGE</text>
+  <text x="606" y="644" class="mono det">/api/badge/:vendor · SVG</text>
+
+  <rect x="590" y="690" width="360" height="76" class="box"/>
+  <text x="606" y="721" class="mono ttl">STRIPE BILLING</text>
+  <text x="606" y="748" class="mono det">/api/stripe/* · lib/stripe.ts</text>
+
+  <!-- ================= SUPABASE ================= -->
+  <rect x="1180" y="113" width="10" height="10" fill="#3ecf8e"/>
+  <text x="1200" y="130" class="mono sect">SUPABASE · POSTGRES</text>
+  <rect x="1180" y="146" width="380" height="474" class="group"/>
+
+  <rect x="1200" y="170" width="340" height="120" class="box"/>
+  <text x="1216" y="201" class="mono ttl">TABLES · RLS</text>
+  <text x="1216" y="228" class="mono det">vendors · sites · maydays</text>
+  <text x="1216" y="250" class="mono det">flares · rescues · vendor_billing</text>
+  <text x="1216" y="272" class="mono det">public read · no direct writes</text>
+
+  <rect x="1200" y="310" width="340" height="170" class="box"/>
+  <text x="1216" y="341" class="mono ttl">SQL FUNCTIONS</text>
+  <text x="1216" y="368" class="mono det">report_mayday() · match_site()</text>
+  <text x="1216" y="390" class="mono det">approach() · site_briefing()</text>
+  <text x="1216" y="412" class="mono det">leave_flare() · record_rescue()</text>
+  <text x="1216" y="434" class="mono det">rate_flare() · claim_vendor()</text>
+  <text x="1216" y="456" class="mono det">mark_rescue_billed()</text>
+
+  <rect x="1200" y="500" width="340" height="100" class="box"/>
+  <text x="1216" y="531" class="mono ttl">REALTIME PUBLICATION</text>
+  <text x="1216" y="558" class="mono det">maydays · rescues · flares</text>
+  <text x="1216" y="580" class="mono det">sites · vendors</text>
+
+  <!-- Mayday to Postgres -->
+  <path d="M950 416H1199" class="wire" marker-end="url(#arrow)"/>
+  <text x="984" y="406" class="mono cmd">supabase.rpc()</text>
+  <text x="984" y="438" class="mono lbl" fill-opacity="0.7">SERVICE ROLE KEY</text>
+
+  <!-- Realtime back to the hive map -->
+  <path d="M1200 530H951" class="wire" marker-end="url(#arrow)"/>
+  <text x="984" y="520" class="mono lbl">LIVE INSERTS</text>
+  <text x="984" y="552" class="mono lbl" fill-opacity="0.7">ANON KEY · RLS READ</text>
+
+  <!-- ================= STRIPE ================= -->
+  <rect x="1180" y="649" width="10" height="10" fill="#635bff"/>
+  <text x="1200" y="666" class="mono sect">STRIPE · TEST MODE</text>
+  <rect x="1180" y="680" width="380" height="170" class="group"/>
+
+  <rect x="1200" y="696" width="340" height="64" class="box"/>
+  <text x="1216" y="724" class="mono ttl">CHECKOUT</text>
+  <text x="1216" y="747" class="mono det">claim an airspace</text>
+
+  <rect x="1200" y="772" width="340" height="64" class="box"/>
+  <text x="1216" y="800" class="mono ttl">BILLING METERS</text>
+  <text x="1216" y="823" class="mono det">one meter event per rescue id</text>
+
+  <!-- Mayday to Stripe and back -->
+  <path d="M950 712H1179" class="wire" marker-end="url(#arrow)"/>
+  <text x="984" y="702" class="mono lbl">CLAIM · METER EVENTS</text>
+  <path d="M1180 750H951" class="wire" marker-end="url(#arrow)"/>
+  <text x="984" y="772" class="mono lbl" fill-opacity="0.7">WEBHOOK</text>
+
+  <!-- ================= legend ================= -->
+  <line x1="40" y1="862" x2="1560" y2="862" stroke="#1f1f1f" stroke-width="1"/>
+  <rect x="40" y="875" width="10" height="10" fill="#ff3b30"/>
+  <text x="58" y="885" class="mono det">maydays</text>
+  <rect x="150" y="875" width="10" height="10" fill="#f5a524"/>
+  <text x="168" y="885" class="mono det">flares and official fixes</text>
+  <rect x="440" y="875" width="10" height="10" fill="#58b7ff"/>
+  <text x="458" y="885" class="mono det">rescues</text>
+  <text x="1560" y="885" text-anchor="end" class="mono det">one bee pays · the hive does not</text>
+</svg>

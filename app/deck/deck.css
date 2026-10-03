@@ -1,0 +1,42 @@
+/* The deck carries its own palette and type so it holds on stage whatever the
+   site theme does: a honey-yellow field, near-black extrabold type, deep red
+   for maydays, burnt honey for fixes, pale wax for rescues. The rules sit in
+   the base layer so utility classes on the same element still win. */
+@layer base {
+  .deck-root {
+    background: #f6cf1b;
+    color: #17130d;
+    color-scheme: light;
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Headlines: large, extrabold, tightly set. */
+  .dk-display {
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+}
+
+.deck-root ::selection {
+  background: #17130d;
+  color: #f6cf1b;
+}
+
+/* A photographed bee on white: multiply drops the white into the yellow. */
+.dk-bee {
+  mix-blend-mode: multiply;
+}
+
+@keyframes dk-blip {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  80%, 100% { transform: scale(2.6); opacity: 0; }
+}
+.dk-blip {
+  animation: dk-blip 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dk-blip { animation: none; opacity: 0; }
+}

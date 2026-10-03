@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mayday": {
+      "type": "http",
+      "url": "${MAYDAY_URL:-http://localhost:3000}/api/mcp"
+    }
+  }
+}

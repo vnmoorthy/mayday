@@ -1,0 +1,6 @@
+{
+  "title": "Stripe webhook rejects every signed event",
+  "vendor": "stripe",
+  "surface": "webhooks.constructEvent",
+  "description": "A webhook handler re-serializes the parsed JSON body before verifying it, so Stripe's signature check fails on every event."
+}

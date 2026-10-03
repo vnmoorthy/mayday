@@ -1,0 +1,6 @@
+{
+  "title": "Supabase client fails to start: supabaseUrl is required",
+  "vendor": "supabase",
+  "surface": "createClient",
+  "description": "The client reads SUPABASE_URL while the project defines NEXT_PUBLIC_SUPABASE_URL, so createClient gets undefined and throws."
+}

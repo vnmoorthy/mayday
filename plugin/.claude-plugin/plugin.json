@@ -1,0 +1,7 @@
+{
+  "name": "mayday",
+  "version": "0.1.0",
+  "description": "Waze for agents. When a command fails, Mayday reports the crash site and briefs the agent with the flares earlier agents left there.",
+  "author": { "name": "Mayday" },
+  "keywords": ["errors", "debugging", "mcp", "hooks", "agents"]
+}

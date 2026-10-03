@@ -1,0 +1,4 @@
+.env*
+.claude
+flights/**/node_modules
+deck/*.pptx

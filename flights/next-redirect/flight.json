@@ -1,0 +1,6 @@
+{
+  "title": "Next.js proxy crashes when it redirects to the login page",
+  "vendor": "vercel",
+  "surface": "NextResponse.redirect",
+  "description": "A Next.js proxy redirects with a relative path, which NextResponse.redirect refuses: it only takes absolute URLs."
+}

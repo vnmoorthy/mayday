@@ -1,0 +1,161 @@
+@import "tailwindcss";
+
+/* Mayday design tokens. A honeybee's colours: a honey-yellow field, near-black
+   type, and a swarm drifting across the page. The honeybee is the model: a
+   forager attacked on a path warns the hive off it. Colour beyond yellow and
+   black is reserved for data: red for maydays, deep amber for official fixes,
+   deep blue for rescues. Token names are historical; read the comments. */
+@theme inline {
+  --color-bg: #f6cf1b;          /* the field: honey yellow */
+  --color-panel: #f9db4a;       /* a lighter cell */
+  --color-panel-2: #ecc10d;     /* a darker cell, hover and wells */
+  --color-line: #d9b30a;        /* hairlines: darker yellow */
+  --color-line-2: #17130d;      /* strong rules and outlines: near-black */
+  --color-ink: #17130d;         /* text */
+  --color-mute: #54491a;        /* secondary text, 5:1 on the field */
+  --color-dim: #86761f;         /* tertiary text */
+  --color-radar: #17130d;       /* primary marks and actions: near-black */
+  --color-radar-dim: #6b5f1f;
+  --color-distress: #b80f26;    /* maydays */
+  --color-flare: #7a3f00;       /* flares and official fixes: burnt honey */
+  --color-honey: #17130d;       /* the brand mark, black on yellow */
+  --color-rescue: #17130d;      /* rescues: near-black; rescued cells are capped in pale wax */
+  --color-comb: #fff6c2;        /* pale wax: light cells, bee wings */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
+
+  --animate-blip: blip 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  --animate-sweep: sweep 7s linear infinite;
+  --animate-flicker: flicker 1.6s steps(2, start) infinite;
+  --animate-rise: rise 0.5s ease-out both;
+  --animate-hover-bee: hover-bee 3.2s ease-in-out infinite;
+}
+
+@keyframes blip {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  80%, 100% { transform: scale(2.6); opacity: 0; }
+}
+@keyframes sweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes hover-bee {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-6px) rotate(3deg); }
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+/* Headlines: large, heavy enough to hold the yellow, tightly set. */
+h1, h2, .display {
+  font-weight: 560;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+h3 {
+  font-weight: 560;
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: #17130d;
+  color: #f6cf1b;
+}
+
+/* Small uppercase instrument label. */
+.label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-mute);
+}
+
+.panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line-2);
+  border-radius: 18px;
+}
+
+/* Faint dot grid over the field. */
+.grid-bg {
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--color-ink) 22%, transparent) 1px, transparent 1.5px);
+  background-size: 28px 28px;
+}
+
+/* Faint honeycomb, for hero wells. */
+.comb-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='97' viewBox='0 0 56 97'%3E%3Cpath d='M28 0 56 16.2v32.3L28 64.7 0 48.5V16.2ZM28 64.7V97M0 48.5v32.3M56 48.5v32.3' fill='none' stroke='%23d9b30a' stroke-width='1.2'/%3E%3C/svg%3E");
+  background-size: 56px 97px;
+}
+
+/* Hexagon clip for honeycomb cells and the logo mark. */
+.hex {
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+
+/* The giant sprayed wordmark. The #spray filter lives in the root layout. */
+.wordmark {
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 0.82;
+  font-size: clamp(5.5rem, 21vw, 21rem);
+  color: var(--color-ink);
+  filter: url(#spray);
+  user-select: none;
+}
+
+/* Dark terminal well: the one place the page goes black. */
+.terminal {
+  background: #17130d;
+  color: #fff6c2;
+  border-radius: 18px;
+}
+
+/* A full-width hairline, for separating sections. */
+.rule {
+  border-top: 1px solid var(--color-line-2);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-2) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
