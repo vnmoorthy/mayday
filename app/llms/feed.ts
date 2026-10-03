@@ -5,7 +5,7 @@ import type { Flare } from "@/lib/types";
 
 // Shared by the /llms pitfall feeds and POST /api/v1/vaccine.
 
-// The best flare at each site (official first, then helped - failed), in one
+// The best flare at each site (vendor-pinned first, then helped - failed), in one
 // query for all the sites.
 export async function bestFlares(siteIds: string[]): Promise<Map<string, Flare>> {
   const best = new Map<string, Flare>();

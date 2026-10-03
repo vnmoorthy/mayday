@@ -23,8 +23,6 @@ type Live = "connecting" | "live" | "off" | "error";
 type NoticeState = { tone: "radar" | "flare"; text: string } | null;
 
 const HOT_MS = 4500;
-// Maydays arrive in bursts during a spike; one incident reload covers a burst.
-const INCIDENT_DEBOUNCE_MS = 1200;
 
 const sortValue = (s: Site, key: SortKey) =>
   key === "down" ? s.maydays_count : key === "hours" ? s.minutes_lost : rescueRate(s.maydays_count, s.rescues_count);
@@ -64,7 +62,6 @@ export function TowerClient({
   );
   const [billingTick, setBillingTick] = useState(0);
   const [detailTick, setDetailTick] = useState(0);
-  const [incidentTick, setIncidentTick] = useState(0);
   const [notice, setNotice] = useState<NoticeState>(
     justClaimed
       ? { tone: "radar", text: `Airspace claimed. The ${initialVendor.name} tower is open: pin official fixes at your crash sites.` }
@@ -103,17 +100,6 @@ export function TowerClient({
     return () => Object.values(pending).forEach(clearTimeout);
   }, []);
 
-  const incidentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const bumpIncidents = useCallback(() => {
-    if (incidentTimer.current) clearTimeout(incidentTimer.current);
-    incidentTimer.current = setTimeout(() => setIncidentTick((n) => n + 1), INCIDENT_DEBOUNCE_MS);
-  }, []);
-  useEffect(
-    () => () => {
-      if (incidentTimer.current) clearTimeout(incidentTimer.current);
-    },
-    [],
-  );
 
   useEffect(() => {
     const sb = supabaseBrowser();
@@ -124,7 +110,6 @@ export function TowerClient({
         const m = p.new as Mayday;
         if (!siteIds.current.has(m.site_id)) return;
         flash(m.site_id);
-        bumpIncidents();
         if (selectedRef.current === m.site_id) setDetailTick((n) => n + 1);
       })
       // INSERT is the rescue itself; UPDATE is Stripe marking it billed.
@@ -151,7 +136,6 @@ export function TowerClient({
         if (p.eventType === "INSERT") {
           flash(s.id);
           // A first mayday at a new site arrives before the site is known here.
-          bumpIncidents();
         }
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "vendors", filter: `slug=eq.${slug}` }, (p) => {
@@ -166,7 +150,7 @@ export function TowerClient({
     return () => {
       void sb.removeChannel(channel);
     };
-  }, [slug, flash, bumpIncidents]);
+  }, [slug, flash]);
 
   const totals = useMemo(() => {
     const down = sites.reduce((n, s) => n + s.maydays_count, 0);
@@ -263,7 +247,7 @@ export function TowerClient({
               ) : null}
             </span>
           ) : (
-            <span>Unclaimed airspace</span>
+            <span>Unclaimed airspace: nothing here was written by {vendor.name}.</span>
           )}
           <LiveStatus live={live} />
         </div>
@@ -287,26 +271,36 @@ export function TowerClient({
         </Notice>
       ) : null}
 
-      <Incidents index={idx()} slug={slug} tick={incidentTick} onOpen={openIncident} />
+      <Incidents index={idx()} slug={slug} onOpen={openIncident} />
 
       <section className="flex flex-col gap-6" aria-labelledby="airworthiness-heading">
         <SectionHead
           index={idx()}
           title="Airworthiness"
           id="airworthiness-heading"
-          aside="Computed from real crashes and rescues. It cannot be bought."
+          aside={
+            <span className="inline-flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-flare px-2.5 py-0.5 font-mono text-xs font-bold uppercase tracking-[0.12em] text-flare">
+                Provisional
+              </span>
+              It cannot be bought.
+            </span>
+          }
         />
         <div className={clsx(CARD, "flex flex-col gap-10 p-6 sm:p-10")}>
+        <p className="max-w-3xl text-sm font-semibold text-ink">
+          Provisional: computed mostly from charted failure patterns, not measured traffic.
+        </p>
         <div className="grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-20">
           <div className="flex items-end gap-6 sm:gap-8">
             <span
               className="display text-[10rem] font-extrabold! leading-[0.82]! text-ink sm:text-[15rem]"
-              aria-label={rated ? `Grade ${rating.grade}` : "Not rated"}
+              aria-label={rated ? `Provisional grade ${rating.grade}` : "Not rated"}
             >
               {rating.grade}
             </span>
             <div className="flex flex-col gap-2 pb-1 sm:pb-3">
-              <span className="label">Score</span>
+              <span className="label">Provisional score</span>
               <span className="tabular text-5xl font-extrabold leading-none tracking-tight text-ink sm:text-7xl">
                 {rated ? rating.score : "—"}
                 <span className="text-xl font-semibold tracking-normal text-mute sm:text-2xl"> /100</span>

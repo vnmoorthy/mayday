@@ -81,7 +81,11 @@ export default async function SitePage({ params }: Props) {
             {vendor.name}
           </Link>
           <span>{site.kind}</span>
-          {hasOfficial ? <span className="font-bold text-flare!">Official fix pinned</span> : <span>No official fix</span>}
+          {hasOfficial ? (
+            <span className="font-bold text-flare!">Pinned by the {vendor.name} tower · claim not verified</span>
+          ) : (
+            <span>No fix pinned by the tower</span>
+          )}
         </div>
         <span className="break-all font-mono text-xs text-mute">{site.surface}</span>
       </header>
@@ -150,8 +154,8 @@ export default async function SitePage({ params }: Props) {
             <SectionHead index="05" title={vendor.claimed ? "Claimed airspace" : "Unclaimed airspace"} id="tower-heading" />
             <p className="max-w-xl text-base text-mute">
               {vendor.claimed
-                ? `The ${vendor.name} tower watches this crash site and can pin an official fix here.`
-                : `Nobody from ${vendor.name} has claimed this airspace yet. Claiming the tower lets the vendor pin an official fix here, which raises its airworthiness rating.`}
+                ? `The ${vendor.name} tower has been claimed and can pin a fix here. The claim is not verified: claiming does not yet prove the claimant is ${vendor.name}.`
+                : `Unclaimed airspace: nothing here was written by ${vendor.name}. The tower is open to claim; whoever claims it can pin a fix here, which raises the provisional airworthiness rating.`}
             </p>
             <div>
               <ButtonLink href={`/tower/${encodeURIComponent(vendor.slug)}`} variant="ghost">

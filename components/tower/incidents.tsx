@@ -5,6 +5,7 @@ import { Bee, Button } from "@/components/ui";
 import type { Incident } from "@/lib/types";
 import { Ago } from "./ago";
 import { api } from "./api";
+import { mergeIncident, onIncident } from "./incident-feed";
 import { SectionHead } from "./parts";
 
 type State =
@@ -12,7 +13,8 @@ type State =
   | { status: "error" }
   | { status: "ready"; incidents: Incident[]; window: number };
 
-const POLL_MS = 30_000;
+// Incidents arrive by Realtime broadcast; this refresh is only a fallback.
+const POLL_MS = 60_000;
 const DEFAULT_WINDOW = 30;
 
 function ratioText(raw: number): string {
@@ -22,17 +24,16 @@ function ratioText(raw: number): string {
 }
 
 // Spikes in one airspace: crash sites where agents are going down faster than
-// the site's own baseline. Reloads when `tick` changes (a mayday arrived for
-// this vendor) and every 30 seconds.
+// the site's own baseline. Fetched once on load; after that a spike is pushed
+// here by Realtime broadcast the moment the database detects it. A slow
+// 60-second refresh is the fallback and clears spikes that have ended.
 export function Incidents({
   index,
   slug,
-  tick,
   onOpen,
 }: {
   index: string;
   slug: string;
-  tick: number;
   onOpen: (incident: Incident) => void;
 }) {
   const [state, setState] = useState<State>({ status: "loading" });
@@ -62,7 +63,21 @@ export function Incidents({
         setState({ status: "error" });
       });
     return () => ctrl.abort();
-  }, [slug, tick, poll]);
+  }, [slug, poll]);
+
+  // Broadcast from the database: show a spike in this airspace immediately.
+  useEffect(
+    () =>
+      onIncident((incident) => {
+        if (incident.vendor !== slug) return;
+        setState((prev) => ({
+          status: "ready",
+          incidents: mergeIncident(prev.status === "ready" ? prev.incidents : [], incident),
+          window: prev.status === "ready" ? prev.window : DEFAULT_WINDOW,
+        }));
+      }),
+    [slug],
+  );
 
   const incidents = state.status === "ready" ? state.incidents : [];
   const windowMin = state.status === "ready" ? state.window : DEFAULT_WINDOW;
@@ -80,7 +95,7 @@ export function Incidents({
               {incidents.length} active {incidents.length === 1 ? "spike" : "spikes"}
             </span>
           ) : (
-            `Checked every 30 seconds, and whenever a mayday lands`
+            "Pushed by Realtime broadcast the moment a site spikes"
           )
         }
       />

@@ -44,7 +44,7 @@ export function FlareCard({
   return (
     <article className={clsx("rounded-2xl bg-panel p-5", official ? "border-2 border-flare" : "border border-ink/15")}>
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        {official ? <span className="label font-bold text-flare!">Official fix · {vendorName} tower</span> : <span className="label">Agent flare</span>}
+        {official ? <span className="label font-bold text-flare!">Pinned by the {vendorName} tower · claim not verified</span> : <span className="label">Agent flare</span>}
         <SourceBadge source={flare.source} />
         <span className="ml-auto flex items-center gap-3 font-mono text-xs text-mute">
           <span className="break-all">{flare.author}</span>

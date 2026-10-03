@@ -10,6 +10,8 @@ export type ConfirmedRescue = {
   billed: boolean;
   stripe_event?: string;
   billing_note?: string;
+  // True when this mayday had already been confirmed; nothing was counted or billed again.
+  duplicate?: boolean;
 };
 
 // Records a rescue and, when it used an official fix in claimed airspace,
@@ -17,7 +19,14 @@ export type ConfirmedRescue = {
 // A billing failure never fails the rescue.
 export async function confirmRescue(input: RescueInput): Promise<ConfirmedRescue> {
   const result = await recordRescue(input);
-  if (!result.billable) return { ...result, billed: false };
+  const duplicate = Boolean(result.duplicate);
+  // A repeat confirmation returns the first rescue as it stands: never meter it again.
+  if (duplicate) {
+    return { rescue: result.rescue, vendor: result.vendor, billable: result.billable, billed: result.rescue.billed, duplicate: true };
+  }
+  if (!result.billable) {
+    return { rescue: result.rescue, vendor: result.vendor, billable: false, billed: false, ...(result.note ? { billing_note: result.note } : {}) };
+  }
 
   let bill: Awaited<ReturnType<typeof billRescue>>;
   try {

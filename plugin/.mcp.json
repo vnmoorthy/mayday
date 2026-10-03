@@ -2,7 +2,7 @@
   "mcpServers": {
     "mayday": {
       "type": "http",
-      "url": "${MAYDAY_URL:-http://localhost:3000}/api/mcp"
+      "url": "${MAYDAY_URL:-https://mayday-alpha-eight.vercel.app}/api/mcp"
     }
   }
 }

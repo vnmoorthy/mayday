@@ -1,0 +1,6 @@
+{
+  "title": "HivePay payout is refused, then refused again",
+  "vendor": "hivepay",
+  "surface": "payouts.create",
+  "description": "A payout written from HivePay's published docs is refused by the SDK. The docs are out of date, so each fix only uncovers the next requirement the docs never mention."
+}

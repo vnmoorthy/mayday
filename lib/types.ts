@@ -9,6 +9,8 @@ export type Vendor = {
   domains: string[];
   claimed: boolean;
   claimed_at: string | null;
+  // Set only by Mayday after the claimant proves control of the vendor's domain.
+  verified: boolean;
   created_at: string;
 };
 
@@ -39,6 +41,8 @@ export type Site = {
   minutes_lost: number;
   first_seen: string;
   last_seen: string;
+  // True when the site came from the charted (seed) set of well-known failures.
+  charted: boolean;
 };
 
 // One step of the black-box replay: what the agent tried and what happened.
@@ -168,3 +172,26 @@ export type Route = {
 };
 
 export type HiveSavings = { rescues: number; minutes_saved: number; live_rescues: number; route_landings: number };
+
+// One row of match_candidates(): why an error did or did not land on a site.
+export type MatchCandidate = {
+  site_id: string;
+  slug: string;
+  title: string;
+  vendor: string;
+  maydays_count: number;
+  trigram: number; // similarity(signature, error)
+  signature_in_error: number; // word_similarity(signature, error)
+  error_in_signature: number; // word_similarity(error, signature), long errors only
+  code_match: boolean; // a shared error code such as PGRST116
+  score: number; // the greatest of the above (a code match counts 0.8)
+  matched: boolean; // score >= 0.55
+};
+
+export type MatchExplanation = {
+  signature: string; // the error after normalisation
+  codes: string[]; // error codes pulled out of it
+  vendor: string; // the vendor guess
+  threshold: number;
+  candidates: MatchCandidate[];
+};

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { rate, type Rating } from "@/lib/airworthiness";
 import { json, preflight, readBody, route } from "@/lib/http";
 import { sortFlares } from "@/lib/mcp";
+import { AGENT_FLARE_LABEL, UNTRUSTED_HEADER, VENDOR_PINNED_LABEL } from "@/lib/redact";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import type { Flare, Site, Vendor } from "@/lib/types";
 
@@ -38,7 +39,8 @@ function oneSentence(body: string): string {
 
 // Vaccination: a project sends its dependency names at session start and gets
 // back the crash sites other agents hit on that stack, with the fix for each,
-// before it has made a single mistake.
+// before it has made a single mistake. The briefing opens with the untrusted
+// envelope: the fixes come from other agents and unverified vendors.
 export const POST = route(async (req) => {
   const { dependencies } = await readBody(req, vaccineBody);
 
@@ -113,14 +115,15 @@ export const POST = route(async (req) => {
   const lines: string[] = [];
   const withSites = vendors.filter((v) => v.sites.length);
   if (withSites.length) {
+    lines.push(UNTRUSTED_HEADER, "");
     lines.push(`Mayday vaccination for this stack (${withSites.map((v) => v.name).join(", ")}): crash sites to avoid, most agents down first.`);
     for (const v of withSites) {
       const down = v.rating?.maydays ?? v.sites.reduce((n, s) => n + s.maydays_count, 0);
-      const grade = v.rating && v.rating.score !== null ? ` Airworthiness ${v.rating.grade} (${v.rating.score}/100).` : "";
+      const grade = v.rating && v.rating.score !== null ? ` Airworthiness ${v.rating.grade} (${v.rating.score}/100, provisional: mostly charted data).` : "";
       lines.push("", `${v.name}: ${down} agents have gone down on this stack.${grade}`);
       v.sites.forEach((s, i) => {
         const fix = s.fix
-          ? `${s.fix.official ? `OFFICIAL FIX from the ${v.name} team` : "Fix"}: ${oneSentence(s.fix.body)}`
+          ? `${s.fix.official ? VENDOR_PINNED_LABEL : `Fix ${AGENT_FLARE_LABEL}`}: ${oneSentence(s.fix.body)}`
           : "No fix charted yet.";
         lines.push(`${i + 1}. ${s.title} (${s.surface}, ${s.maydays_count} down). ${fix}`);
       });

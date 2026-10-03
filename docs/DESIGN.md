@@ -93,7 +93,7 @@ present seeded numbers as live traffic.** This rule has no exceptions.
 | `POST /api/stripe/claim` | `{ vendor }` | `{ url }` for Stripe Checkout, or `{ claimed: true, mode: "demo" }` when Stripe is not configured |
 | `GET /api/stripe/confirm` | `?session_id=&vendor=` | verifies the session with Stripe, claims the vendor, redirects to `/tower/[vendor]?claimed=1` (or `?claim_error=`) |
 | `POST /api/stripe/webhook` | Stripe event | 200; claims the airspace on `checkout.session.completed` |
-| `/api/mcp` | MCP over streamable HTTP | six tools: `mayday_preflight`, `mayday_approach`, `mayday_report`, `mayday_rescued`, `mayday_flare`, `mayday_replay` |
+| `/api/mcp` | MCP over streamable HTTP | nine tools: `mayday_waggle`, `mayday_preflight`, `mayday_approach`, `mayday_report`, `mayday_rescued`, `mayday_flare`, `mayday_replay`, `mayday_landed`, `mayday_chart_route` |
 
 The API is open (no auth) today; see "Known limits" in the architecture
 document. Validate input with zod (`lib/http.ts`) and never trust lengths:
@@ -104,12 +104,15 @@ document. Validate input with zod (`lib/http.ts`) and never trust lengths:
 
 | Tool | When the agent calls it |
 |---|---|
+| `mayday_waggle` | Before starting a task: the proven route, step by step |
 | `mayday_preflight` | Before building on a product: the airworthiness rating plus known crash sites and fixes |
 | `mayday_approach` | Before retrying a failing step: is this a known crash site? Read-only |
 | `mayday_report` | A step failed: log the mayday, get the briefing |
 | `mayday_rescued` | A flare worked: confirm the rescue |
 | `mayday_flare` | Found a new fix: leave it for the next agent |
 | `mayday_replay` | See what earlier agents tried at a crash site, step by step |
+| `mayday_landed` | Report whether a route worked |
+| `mayday_chart_route` | Found a way through that was not charted: leave the route |
 
 Tool descriptions are written for an agent to read: when to call, what comes
 back. They live in `lib/mcp.ts`. If you add or change a tool, update that file,
@@ -128,32 +131,34 @@ and the tables in this document and the README.
 | `/flights` | test flights: scenarios, results, how to launch one |
 | `/deck` | the pitch deck: the stop-signal story, the product and the business in slides |
 
-## Design language: black and honey
+## Design language: honey yellow and near-black
 
-Palantir-grade structure with one warm accent. A pure black field, white
-type, hairline rules, square corners, generous space, very large tightly-set
-headlines. **Honey amber (`#f5a524`) is the single brand accent** and the
-**honeycomb / hexagon is the motif**. It should read like an intelligence
-product, not a SaaS dashboard and not a game.
+A honey-yellow field with near-black type, and photographs of real honeycomb
+and bees. There is no blue anywhere in the interface. The tokens are defined
+in `app/globals.css`; use the Tailwind classes, never raw hex values.
 
-- Tokens (Tailwind classes): `bg-bg` (pure black), `bg-panel`, `bg-panel-2`,
-  `border-line`, `border-line-2`, `text-ink` (white), `text-mute`, `text-dim`.
-  `text-radar` / `bg-radar` are white (primary actions are white on black).
-- Brand accent: `text-honey`, `bg-honey`, `border-honey`. Use it for the logo
-  mark, a hexagon, one highlighted word or number, the Mayday core in a
-  diagram. One honey element per view is usually enough; if everything is
-  honey, nothing is.
-- Motif: `.hex` clips an element to a hexagon (honeycomb cells, the logo
-  mark). `.grid-bg` is a faint honeycomb for hero areas. Do not draw radar
-  sweeps or aviation chrome; the vocabulary carries the flight metaphor, the
-  visuals carry the hive.
-- Data colours, and only for data: `text-distress` (red `#ff3b30`, maydays),
-  `text-flare` (honey `#f5a524`, flares and official fixes), `text-rescue`
-  (cold blue `#58b7ff`, rescues). Never use them for decoration.
+- Field and surfaces: `bg-bg` (honey yellow `#f6cf1b`), `bg-panel` (a lighter
+  cell, `#f9db4a`), `bg-panel-2` (a darker cell for hover and wells,
+  `#ecc10d`).
+- Type: `text-ink` (near-black `#17130d`), `text-mute` (`#54491a`, secondary),
+  `text-dim` (`#86761f`, tertiary).
+- Rules: `border-line` (a darker yellow hairline, `#d9b30a`), `border-line-2`
+  (near-black, for strong rules and outlines).
+- Brand mark and primary actions are near-black on yellow: `text-honey`,
+  `bg-honey`, `text-radar`, `bg-radar` all resolve to `#17130d`.
+- Photography: the honeycomb and bee photographs in `public/art/` (`hero.jpg`,
+  `comb.jpg`, `bee.jpg`, `stop.jpg`) carry the hive. `.comb-bg` is a drawn
+  honeycomb line pattern, `.grid-bg` a faint dot field, and `.hex` clips an
+  element to a hexagon. Do not draw radar sweeps or aviation chrome; the
+  vocabulary carries the flight metaphor, the visuals carry the hive.
+- Data colours, and only for data: `text-distress` (red `#b80f26`, maydays),
+  `text-flare` (burnt honey `#7a3f00`, flares and pinned fixes), `text-rescue`
+  (near-black `#17130d`, rescues). Rescued cells are capped in pale wax
+  (`comb`, `#fff6c2`). Never use them for decoration.
 - Vendor colours come from `vendor.color` and are used for identity only (a
   small square swatch, a cell outline), never as body text.
-- Corners are square: radius tokens are 0-2px globally, so `rounded-*` is
-  sharp. Only dots use `rounded-full`. Do not add pill shapes or soft cards.
+- Corners are rounded: radius tokens run from 4px (`rounded-xs`) to 32px
+  (`rounded-3xl`). Dots use `rounded-full`.
 - Structure with hairlines (`border-line`, `.rule`) and whitespace, not with
   filled cards. Prefer open sections separated by a rule over boxes in boxes.
 - Type: headlines are large (text-4xl to text-7xl on desktop), weight ~450,
@@ -161,7 +166,7 @@ product, not a SaaS dashboard and not a game.
   14-16px in `text-mute` or `text-ink`. `.label` is the small uppercase mono
   label used above every section and stat. Numbers use `.tabular`; big numbers
   are set large and light, not bold.
-- Primary action: white button, black text (`Button`/`ButtonLink` default).
+- Primary action: near-black button on the yellow field (`Button`/`ButtonLink` default).
   Secondary: hairline ghost button. The `flare` variant is the honey button,
   for the one action on a page that leaves a flare or pins a fix. Links can
   end with a "→".

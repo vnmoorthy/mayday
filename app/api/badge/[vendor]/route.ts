@@ -17,6 +17,10 @@ const LABEL = "MAYDAY AIRWORTHINESS";
 const H = 24;
 const PAD = 10;
 const CHAR = 7.2; // advance of one 11px mono capital, letter-spacing included
+// Ratings are computed mostly from charted failure patterns, not measured
+// traffic, so a rated badge says so in small type.
+const NOTE = "PROVISIONAL";
+const NOTE_CHAR = 5; // advance of one 7.5px mono capital, letter-spacing included
 const FONT = "ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace";
 
 const esc = (s: string) =>
@@ -42,8 +46,11 @@ function badge(name: string | null, rating: Rating | null): string {
   // The divider sits on a half pixel so the 1px hairline stays crisp.
   const split = Math.round(PAD + LABEL.length * CHAR + PAD) + 0.5;
   const valueChars = grade.length + (score ? 1 + score.length : 0);
-  const width = Math.ceil(split + PAD + valueChars * CHAR + PAD);
-  const title = `Mayday airworthiness${name ? `, ${name}` : ""}: ${rated ? `${grade} ${score}/100` : "unrated"}`;
+  const noteX = split + PAD + valueChars * CHAR + PAD * 0.8;
+  const width = Math.ceil(rated ? noteX + NOTE.length * NOTE_CHAR + PAD : split + PAD + valueChars * CHAR + PAD);
+  const title = `Mayday airworthiness${name ? `, ${name}` : ""}: ${
+    rated ? `${grade} ${score}/100, provisional (computed mostly from charted failure patterns, not measured traffic)` : "unrated"
+  }`;
 
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${H}" viewBox="0 0 ${width} ${H}" role="img" aria-label="${esc(title)}">` +
@@ -54,7 +61,12 @@ function badge(name: string | null, rating: Rating | null): string {
     run(PAD, LABEL, "#ffffff") +
     run(split + PAD, grade, colour, rated ? 700 : 400) +
     (score ? run(split + PAD + (grade.length + 1) * CHAR, score, "#ffffff") : "") +
-    `</g></svg>`
+    `</g>` +
+    (rated
+      ? `<text x="${px(noteX)}" y="14.5" fill="#ffffff" fill-opacity="0.72" font-family="${FONT}" font-size="7.5" ` +
+        `textLength="${px(NOTE.length * NOTE_CHAR)}" lengthAdjust="spacing">${NOTE}</text>`
+      : "") +
+    `</svg>`
   );
 }
 

@@ -1,7 +1,9 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { rate, type Rating } from "@/lib/airworthiness";
+import { timeAgo } from "@/lib/format";
 import { detectVendor, extractCodes, normalizeError, titleFromError } from "@/lib/signature";
+import { redactSecrets, screenFlare } from "@/lib/redact";
 import type {
   AgentRow,
   Attempt,
@@ -12,6 +14,8 @@ import type {
   Flare,
   HiveSavings,
   Incident,
+  MatchCandidate,
+  MatchExplanation,
   Mayday,
   Rescue,
   Route,
@@ -40,10 +44,16 @@ function headline(b: Omit<Briefing, "headline">): string {
   }
   const s = b.site;
   const official = b.flares.find((f) => f.kind === "official");
+  // A site that is not in the charted set was first seen in the wild: the
+  // kind of failure a model cannot know from training.
+  const fresh = s.charted === false ? ` First reported ${timeAgo(s.first_seen)}: not a charted failure, so unlikely to be in any model's training data.` : "";
   const lead = `${plural(s.maydays_count, "agent has", "agents have")} gone down here (${s.vendor} · ${s.surface}). ${plural(s.rescues_count, "was", "were")} rescued.`;
-  if (official) return `${lead} The ${b.vendor?.name ?? s.vendor} tower has pinned an official fix.`;
-  if (b.flares.length) return `${lead} ${plural(b.flares.length, "flare", "flares")} left by earlier agents.`;
-  return `${lead} No flares yet: if you get through, leave one.`;
+  if (official) {
+    const claim = b.vendor?.verified ? "verified vendor" : "vendor claim not verified";
+    return `${lead}${fresh} The ${b.vendor?.name ?? s.vendor} tower has pinned a fix (${claim}).`;
+  }
+  if (b.flares.length) return `${lead}${fresh} ${plural(b.flares.length, "flare", "flares")} left by earlier agents.`;
+  return `${lead}${fresh} No flares yet: if you get through, leave one.`;
 }
 
 function toBriefing(raw: Record<string, unknown>): Briefing {
@@ -136,12 +146,14 @@ export async function getRecentRescues(limit = 30, opts: { vendor?: string } = {
 export type ApproachInput = { error: string; vendor?: string | null };
 
 export async function approach(input: ApproachInput): Promise<Briefing> {
-  const signature = normalizeError(input.error);
-  const vendor = input.vendor ? detectVendor(input.error, input.vendor) : null;
+  // Secrets are stripped before the error is normalised or matched.
+  const text = redactSecrets(input.error);
+  const signature = normalizeError(text);
+  const vendor = input.vendor ? detectVendor(text, input.vendor) : null;
   const { data, error } = await supabaseAdmin().rpc("approach", {
     p_signature: signature,
     p_vendor: vendor,
-    p_codes: extractCodes(input.error),
+    p_codes: extractCodes(text),
   });
   if (error) fail("approach", error);
   return toBriefing(data as Record<string, unknown>);
@@ -161,21 +173,30 @@ export type MaydayInput = {
 };
 
 export async function reportMayday(input: MaydayInput): Promise<Briefing> {
-  const signature = normalizeError(input.error);
-  const vendor = detectVendor(input.error, input.vendor);
+  // What an agent uploads is stored and publicly readable, so secrets are
+  // stripped before the error is normalised, matched or stored.
+  const text = redactSecrets(input.error);
+  const attempts = (input.attempts ?? []).map((a) => ({
+    ...a,
+    action: redactSecrets(a.action ?? ""),
+    result: redactSecrets(a.result ?? ""),
+  }));
+  const title = input.title?.trim() ? redactSecrets(input.title.trim()) : titleFromError(text);
+  const signature = normalizeError(text);
+  const vendor = detectVendor(text, input.vendor);
   const { data, error } = await supabaseAdmin().rpc("report_mayday", {
-    p_error: input.error,
+    p_error: text,
     p_signature: signature,
     p_vendor: vendor,
     p_surface: input.surface ?? null,
     p_agent: input.agent?.trim() || "unknown-agent",
     p_model: input.model ?? null,
     p_session_id: input.session_id ?? null,
-    p_attempts: input.attempts ?? [],
+    p_attempts: attempts,
     p_minutes_lost: input.minutes_lost ?? 0,
     p_source: input.source ?? "live",
-    p_title: input.title?.trim() || titleFromError(input.error),
-    p_codes: extractCodes(input.error),
+    p_title: title,
+    p_codes: extractCodes(text),
   });
   if (error) fail("reportMayday", error);
   return toBriefing(data as Record<string, unknown>);
@@ -191,12 +212,15 @@ export type FlareInput = {
 };
 
 export async function leaveFlare(input: FlareInput): Promise<Flare> {
+  // A flare is read by the next agent: refuse text that attacks it, and strip secrets.
+  const screened = screenFlare(input.body, input.fix_snippet);
+  if (!screened.ok) throw new Error(`Flare rejected: ${screened.reason ?? "unsafe content"}`);
   const { data, error } = await supabaseAdmin().rpc("leave_flare", {
     p_site_id: input.site_id,
-    p_body: input.body,
+    p_body: redactSecrets(input.body),
     p_author: input.author,
     p_kind: input.kind ?? "agent",
-    p_fix_snippet: input.fix_snippet ?? null,
+    p_fix_snippet: input.fix_snippet ? redactSecrets(input.fix_snippet) : null,
     p_source: input.source ?? "live",
   });
   if (error) fail("leaveFlare", error);
@@ -212,7 +236,9 @@ export type RescueInput = {
   source?: Source;
 };
 
-export type RescueResult = { rescue: Rescue; vendor: string; billable: boolean };
+// `duplicate` is true when this mayday was already confirmed: the first rescue
+// comes back unchanged. `note` says why a rescue was not billable.
+export type RescueResult = { rescue: Rescue; vendor: string; billable: boolean; duplicate?: boolean; note?: string | null };
 
 export async function recordRescue(input: RescueInput): Promise<RescueResult> {
   const { data, error } = await supabaseAdmin().rpc("record_rescue", {
@@ -413,4 +439,30 @@ export async function getSavings(): Promise<HiveSavings> {
     live_rescues: Number(d.live_rescues ?? 0),
     route_landings: Number(d.route_landings ?? 0),
   };
+}
+
+// --- match explanation ------------------------------------------------------
+
+// The scores Postgres computed for an error against the nearest crash sites.
+// Read-only: nothing is logged.
+export async function explainMatch(input: { error: string; vendor?: string | null; limit?: number }): Promise<MatchExplanation> {
+  const clean = redactSecrets(input.error);
+  const signature = normalizeError(clean);
+  const codes = extractCodes(clean);
+  const { data, error } = await supabaseAdmin().rpc("match_candidates", {
+    p_signature: signature,
+    p_vendor: input.vendor ? detectVendor(clean, input.vendor) : null,
+    p_codes: codes,
+    p_limit: input.limit ?? 5,
+  });
+  if (error) fail("explainMatch", error);
+  const num = (n: unknown) => Math.round(Number(n ?? 0) * 1000) / 1000;
+  const candidates = ((data ?? []) as MatchCandidate[]).map((c) => ({
+    ...c,
+    trigram: num(c.trigram),
+    signature_in_error: num(c.signature_in_error),
+    error_in_signature: num(c.error_in_signature),
+    score: num(c.score),
+  }));
+  return { signature, codes, vendor: detectVendor(clean, input.vendor), threshold: 0.55, candidates };
 }

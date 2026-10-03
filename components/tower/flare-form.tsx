@@ -110,7 +110,7 @@ export function FlareForm({
       setSnippet(typeof res.fix_snippet === "string" ? res.fix_snippet : "");
       setError(null);
       setDone(false);
-      setDraftNote(`Drafted by ${res.model || "AI"}. Review before pinning.`);
+      setDraftNote(`Draft written by ${res.model || "an AI model"}, not by the vendor. A human at the vendor must review and edit it before it is pinned.`);
     } catch (err) {
       setDraftError(errorMessage(err));
     } finally {

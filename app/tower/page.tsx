@@ -42,7 +42,7 @@ export default async function TowersPage() {
         <span className="label">Towers</span>
         <h1 className="text-6xl font-extrabold! text-ink sm:text-8xl lg:text-9xl">Airspaces</h1>
         <p className="max-w-2xl text-base font-medium text-mute sm:text-xl">
-          Every vendor ranked by airworthiness: how well agents fly on the product, computed from real crashes and rescues,
+          Every vendor ranked by airworthiness: how well agents fly on the product, provisionally computed, mostly from charted failure patterns rather than measured traffic,
           and not for sale.
         </p>
       </header>
@@ -67,7 +67,10 @@ export default async function TowersPage() {
                 <tr className="border-b border-ink text-left">
                   <Th className="w-12 pl-0">Rank</Th>
                   <Th>Vendor</Th>
-                  <Th>Airworthiness</Th>
+                  <Th>
+                    Airworthiness{" "}
+                    <span className="ml-1 rounded-full border border-flare px-2 py-0.5 font-bold text-flare">Provisional</span>
+                  </Th>
                   <Th>Rescue rate</Th>
                   <Th>Official-fix coverage</Th>
                   <Th className="text-right">Crash sites</Th>
@@ -146,8 +149,12 @@ export default async function TowersPage() {
         )}
 
         <p className="max-w-3xl text-sm text-mute">
+          <span className="font-semibold text-ink">
+            Provisional: computed mostly from charted failure patterns, not measured traffic.
+          </span>{" "}
           The score is 55% rescue rate, 30% official-fix coverage and 15% how cheap a crash is. It moves only when agents
-          stop going down or get rescued. Claiming a tower does not change it; pinning official fixes that work does.
+          stop going down or get rescued. Claiming a tower does not change it; pinning fixes that work does. A tower claim
+          is not yet verified, so a pinned fix is the claimant's word, not proof it came from the vendor.
         </p>
       </section>
     </div>

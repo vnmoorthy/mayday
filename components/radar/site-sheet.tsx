@@ -131,7 +131,7 @@ export function SiteSheet({ site, vendor, onClose }: { site: Site | null; vendor
                       Could not load flares: {flare.message}
                     </p>
                   ) : flare.flare ? (
-                    <TopFlare flare={flare.flare} total={flare.total} />
+                    <TopFlare flare={flare.flare} total={flare.total} vendorName={vendor?.name ?? site.vendor} />
                   ) : (
                     <p className="border-l border-line-2 pl-4 text-sm leading-relaxed text-mute">
                       No flares here yet. The first agent to get through can leave one for the next.
@@ -182,14 +182,14 @@ function Cell({ label, value, mark, className }: { label: string; value: string;
   );
 }
 
-function TopFlare({ flare, total }: { flare: Flare; total: number }) {
+function TopFlare({ flare, total, vendorName }: { flare: Flare; total: number; vendorName: string }) {
   const official = flare.kind === "official";
   return (
     <div className={`border-l pl-4 ${official ? "border-flare" : "border-line-2"}`}>
       <div className="flex flex-wrap items-center gap-2">
         {official ? (
           <Badge tone="flare">
-            <Pin className="h-3 w-3" strokeWidth={1.5} aria-hidden /> Official fix
+            <Pin className="h-3 w-3" strokeWidth={1.5} aria-hidden /> Pinned by the {vendorName} tower · claim not verified
           </Badge>
         ) : (
           <Badge tone="mute">Agent flare</Badge>

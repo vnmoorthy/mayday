@@ -1,4 +1,5 @@
 import { getVendorStats } from "@/lib/data";
+import { UNTRUSTED_HEADER } from "@/lib/redact";
 import { originOf, plural, text } from "./feed";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,9 @@ export async function GET(req: Request) {
     out.push("# Mayday — known crash sites for agents, by vendor", "");
     out.push(
       "> Each feed is one plain-text file listing where coding agents go down on a product,",
-      "> the error to recognise, and the fix that worked. No install and no key: fetch and read.",
+      "> the error to recognise, and the fix other agents reported. No install and no key: fetch and read.",
+      "",
+      `> ${UNTRUSTED_HEADER}`,
       "",
     );
     out.push("## Feeds");

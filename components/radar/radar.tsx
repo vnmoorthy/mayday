@@ -7,6 +7,7 @@ import { gradeTone, type Rating } from "@/lib/airworthiness";
 import { rescueRate } from "@/lib/format";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import type { FeedMayday, FeedRescue, Incident, Mayday, Rescue, Site, SiteRef, Vendor } from "@/lib/types";
+import { mergeIncident, onIncident } from "@/components/tower/incident-feed";
 import { Feed } from "./feed";
 import { layoutComb } from "./comb";
 import type { Pulse, PulseKind, Snapshot } from "./geometry";
@@ -30,8 +31,8 @@ const WRAP = "mx-auto w-full max-w-[1440px] px-5 sm:px-8";
 
 const GRADE_TEXT = { rescue: "text-rescue", flare: "text-flare", distress: "text-distress", mute: "text-mute" } as const;
 
-// A spike is checked on load, a moment after each live mayday, and once a minute.
-const INCIDENT_DEBOUNCE_MS = 1200;
+// A spike is fetched once on load and then pushed by Realtime broadcast. The
+// minute refresh is only a fallback, and clears spikes that have ended.
 const INCIDENT_POLL_MS = 60_000;
 
 // Legend swatches: the same paint the hive map uses for its cells.
@@ -109,23 +110,17 @@ export function Radar({
     }
   }, []);
 
-  // Debounced, so a burst of maydays costs one request.
-  const loadIncidentsSoon = useCallback(
-    (delay = INCIDENT_DEBOUNCE_MS) => {
-      if (incidentTimer.current !== null) window.clearTimeout(incidentTimer.current);
-      incidentTimer.current = window.setTimeout(() => {
-        incidentTimer.current = null;
-        void loadIncidents();
-      }, delay);
-    },
-    [loadIncidents],
-  );
-
   useEffect(() => {
-    loadIncidentsSoon(0);
+    incidentTimer.current = window.setTimeout(() => {
+      incidentTimer.current = null;
+      void loadIncidents();
+    }, 0);
     const id = window.setInterval(() => void loadIncidents(), INCIDENT_POLL_MS);
     return () => window.clearInterval(id);
-  }, [loadIncidents, loadIncidentsSoon]);
+  }, [loadIncidents]);
+
+  // The database broadcasts a spike the moment it detects one: show it at once.
+  useEffect(() => onIncident((incident) => setIncidents((prev) => mergeIncident(prev, incident))), []);
 
   // Every live mayday and rescue passes through here, realtime or polled.
   const pulse = useCallback(
@@ -133,9 +128,8 @@ export function Radar({
       const key = `${kind}-${siteId}-${pulseSeq.current++}`;
       setPulses((p) => [...p.slice(-11), { key, siteId, kind }]);
       timersRef.current.push(window.setTimeout(() => setPulses((p) => p.filter((x) => x.key !== key)), 2800));
-      if (kind === "mayday") loadIncidentsSoon();
     },
-    [loadIncidentsSoon],
+    [],
   );
 
   // Replace the hive map with a fresh snapshot and announce anything unseen.
@@ -490,9 +484,12 @@ export function Radar({
               </h2>
             </div>
             <p className="text-sm leading-relaxed text-mute sm:text-base">
-              Every airspace is scored 0 to 100 from real traffic: 55% rescue rate, 30% crashes covered by an official
-              fix, 15% how little time a crash costs. The grade moves only when agents stop going down or get rescued.
-              It cannot be bought.
+              Every airspace is scored 0 to 100: 55% rescue rate, 30% crashes covered by a fix its tower pinned, 15% how
+              little time a crash costs. The grade moves only when agents stop going down or get rescued. It cannot be
+              bought.{" "}
+              <span className="text-ink">
+                Provisional: computed mostly from charted failure patterns, not measured traffic.
+              </span>
             </p>
           </div>
 
@@ -508,7 +505,8 @@ export function Radar({
                       Airspace
                     </th>
                     <th scope="col" className="label py-3 pr-6 font-normal">
-                      Airworthiness
+                      Airworthiness{" "}
+                      <span className="ml-1 rounded-full border border-flare/60 px-2 py-0.5 text-flare">Provisional</span>
                     </th>
                     <th scope="col" className="label py-3 pr-6 text-right font-normal">
                       Crash sites
@@ -671,7 +669,7 @@ const LOOP = [
   {
     index: "Step 02",
     title: "Next agent gets the fix at the crash site",
-    body: "Before it burns the same minutes, the next agent is handed the flares earlier agents left there, with the vendor's official fix first.",
+    body: "Before it burns the same minutes, the next agent is handed the flares earlier agents left there, with the fix pinned by the vendor's tower first. A tower claim is not yet verified.",
     cta: "Connect your agent",
     href: "/install",
   },

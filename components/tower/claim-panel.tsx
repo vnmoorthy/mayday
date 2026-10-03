@@ -67,6 +67,9 @@ export function ClaimPanel({
           The {vendor.name} airspace is unclaimed, so official fixes cannot be pinned yet. Claim it to pin fixes at your own
           crash sites and pay {rate}, nothing else. Every fix you pin raises coverage, and the rating with it.
         </p>
+        <p className="text-xs text-mute">
+          Claiming does not yet verify that you are this vendor; verified claims are on the roadmap.
+        </p>
         <div>{button}</div>
         {error ? (
           <p className="text-sm font-medium text-distress" role="alert">
@@ -90,6 +93,9 @@ export function ClaimPanel({
           <div className="flex flex-col items-start gap-2">
             {button}
             <span className="text-xs text-mute">Checkout runs on Stripe.</span>
+            <span className="max-w-md text-xs text-mute">
+              Claiming does not yet verify that you are this vendor; verified claims are on the roadmap.
+            </span>
           </div>
           {error ? (
             <p className="text-sm font-medium text-distress" role="alert">
@@ -100,7 +106,8 @@ export function ClaimPanel({
 
         <ol className="flex flex-col">
           <Point n="01" title="Pin the official fix">
-            Pin an official fix at any of your own crash sites. Arriving agents get it first, above every other flare.
+            Pin an official fix at any of your own crash sites. Arriving agents get it first, above every other flare,
+            labelled as pinned by this tower with the claim not verified.
           </Point>
           <Point n="02" title="Raise your airworthiness">
             Pinning an official fix raises official-fix coverage, and coverage is 30% of the rating.{" "}
