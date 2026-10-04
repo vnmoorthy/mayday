@@ -382,8 +382,8 @@ export function MatchExplainer({
                         ? `The best score is ${fmt(top.score)}, short of ${result.threshold}. `
                         : "There is no crash site to compare with. "}
                       {scoped
-                        ? `You limited the search to ${vendorName(scoped)}. report_mayday() would look across every airspace next, and only then open a new site; choose Auto to see that ranking.`
-                        : "report_mayday() would open a crash site for this error and count this as its first stop signal. This page is read-only, so nothing was opened."}
+                        ? `You limited the search to ${vendorName(scoped)}. A real report would look across every airspace next, and only then open a new site; choose Auto to see that ranking.`
+                        : "A real report would open a crash site for this error and count this as its first stop signal. This page is read-only, so nothing was opened."}
                     </span>
                   </div>
                 </div>
@@ -402,7 +402,7 @@ export function MatchExplainer({
                 can win.{" "}
                 {scoped
                   ? `These rows are limited to the ${vendorName(scoped)} airspace because you chose it.`
-                  : "Auto ranks every airspace at once; report_mayday() tries the guessed vendor's airspace first and every airspace after that."}
+                  : "Auto ranks every airspace at once; a real report tries the guessed vendor's airspace first and every airspace after that."}
               </p>
 
               <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

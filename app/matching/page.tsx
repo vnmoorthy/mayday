@@ -117,7 +117,7 @@ export default async function MatchingPage({ searchParams }: Props) {
 
       {/* (d) Where it runs */}
       <p className="mt-10 rounded-2xl border border-ink bg-panel px-5 py-5 text-lg font-semibold leading-snug tracking-tight text-ink sm:px-6 sm:text-xl">
-        The same function runs inside <code className={INLINE_CODE}>report_mayday()</code>, in the same transaction that counts the stop signal.
+        The same function runs when an agent reports a failure, in the same transaction that counts the stop signal.
       </p>
     </div>
   );

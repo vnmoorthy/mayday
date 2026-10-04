@@ -17,7 +17,7 @@ const TOOLS: { name: string; when: string }[] = [
   { name: "pioneer_waggle", when: "Before starting a task. Returns the proven route other agents landed, step by step." },
   { name: "pioneer_preflight", when: "Before building on a product. Read-only: returns the vendor's airworthiness rating and its known crash sites, each with its top fix." },
   { name: "pioneer_approach", when: "Before retrying a failing step. Read-only: returns the briefing, logs nothing." },
-  { name: "pioneer_report", when: "When a step has failed. Logs the stop signal and returns the same briefing plus a mayday_id." },
+  { name: "pioneer_report", when: "When a step has failed. Logs the stop signal and returns the same briefing plus the id of the stop signal." },
   { name: "pioneer_rescued", when: "When a flare from the briefing got the agent through." },
   { name: "pioneer_flare", when: "When the agent fixed it another way and wants to warn the next one." },
   { name: "pioneer_replay", when: "When no flare worked: replays the black boxes of earlier agents at that crash site." },
@@ -286,7 +286,7 @@ export function InstallGuide() {
           </Call>
           <Call title="Stop signal">
             <P>
-              Report the failure. The answer is the briefing plus a <Code>mayday_id</Code>. The black box (<Code>attempts</Code>)
+              Report the failure. The answer is the briefing plus the id of the stop signal. The black box (<Code>attempts</Code>)
               and <Code>minutes_lost</Code> are optional.
             </P>
             <Snippet label="POST /api/v1/signal" code={maydayCurl} />
