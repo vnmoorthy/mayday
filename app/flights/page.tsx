@@ -125,7 +125,7 @@ export default async function FlightsPage() {
           />
           <CommandBlock
             label="Control run: no plugin, no briefings"
-            command={`${flightCommand(first)} --runs 3 --no-mayday --url http://localhost:3000`}
+            command={`${flightCommand(first)} --runs 3 --no-pioneer --url http://localhost:3000`}
           />
         </div>
         <p className="mt-5 max-w-3xl text-sm leading-relaxed text-mute">

@@ -40,7 +40,7 @@ export function stripeClient(): Stripe {
 }
 
 export function meterEventName(): string {
-  return process.env.STRIPE_METER_EVENT_NAME?.trim() || "mayday_rescue";
+  return process.env.STRIPE_METER_EVENT_NAME?.trim() || "pioneer_rescue";
 }
 
 // Error text that is safe to return to a caller: Stripe messages can echo part

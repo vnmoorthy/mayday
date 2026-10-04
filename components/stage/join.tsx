@@ -14,7 +14,7 @@ import { BEE_NAME, PRESETS, type Preset } from "./presets";
 
 type BeeState = { name: string; down: number; rescued: number };
 
-const STORE_KEY = "mayday-bee";
+const STORE_KEY = "pioneer-bee";
 // No look-alike characters, so a name can be read off a phone and found on the screen.
 const ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz";
 
@@ -149,7 +149,7 @@ export function Join() {
       inFlight.current = true;
       setPhase({ at: "flying", preset });
       try {
-        const briefing = await post<Briefing>("/api/v1/mayday", {
+        const briefing = await post<Briefing>("/api/v1/signal", {
           error: preset.scenario.error,
           vendor: preset.scenario.vendor,
           agent: bee.name,

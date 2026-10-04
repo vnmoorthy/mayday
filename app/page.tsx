@@ -33,7 +33,7 @@ const NEEDS = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
-  "supabase/migrations/0001_mayday.sql",
+  "supabase/migrations/0001_pioneer.sql",
 ];
 
 function NotConnected({ reason }: { reason: string }) {

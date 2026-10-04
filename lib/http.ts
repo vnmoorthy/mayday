@@ -79,7 +79,7 @@ export function cleanMessage(e: unknown): string {
 }
 
 // Maps a thrown error to a status code. The exceptions raised in
-// supabase/migrations/0001_mayday.sql are matched by their wording.
+// supabase/migrations/0001_pioneer.sql are matched by their wording.
 export function statusFor(e: unknown): number {
   if (e instanceof HttpError) return e.status;
   const m = cleanMessage(e).toLowerCase();

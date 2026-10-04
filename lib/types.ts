@@ -1,4 +1,4 @@
-// Shared types for Pioneer. These mirror supabase/migrations/0001_mayday.sql.
+// Shared types for Pioneer. These mirror supabase/migrations/0001_pioneer.sql.
 
 export type Source = "live" | "seed" | "harvest";
 

@@ -95,9 +95,9 @@ exist:
 
 | Object | Details |
 |---|---|
-| Billing Meter | event name `mayday_rescue` (or `STRIPE_METER_EVENT_NAME`), `sum` aggregation, customer mapped by the `stripe_customer_id` payload key, value from the `value` payload key |
-| Product | id `mayday_rescue`, "Pioneer rescue", unit label `rescue` |
-| Price | $0.25 per rescue, metered, billed monthly, lookup key `mayday_rescue_v1` |
+| Billing Meter | event name `pioneer_rescue` (or `STRIPE_METER_EVENT_NAME`), `sum` aggregation, customer mapped by the `stripe_customer_id` payload key, value from the `value` payload key |
+| Product | id `pioneer_rescue`, "Pioneer rescue", unit label `rescue` |
+| Price | $0.25 per rescue, metered, billed monthly, lookup key `pioneer_rescue_v1` |
 
 It is safe to run again: everything is looked up before it is created. A
 price cannot be edited, so if the existing price no longer points at this
@@ -108,7 +108,7 @@ deployment's environment:
 
 ```
 STRIPE_PRICE_ID=price_...
-STRIPE_METER_EVENT_NAME=mayday_rescue
+STRIPE_METER_EVENT_NAME=pioneer_rescue
 ```
 
 and how to forward webhooks locally

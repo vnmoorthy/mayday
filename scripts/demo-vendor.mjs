@@ -202,7 +202,7 @@ if (missing.length === 0) {
       console.log(`  SKIP ${s.code}: it would match the existing site "${near.json.site.slug}"`);
       continue;
     }
-    const r = await call("/api/v1/mayday", {
+    const r = await call("/api/v1/signal", {
       error,
       vendor: VENDOR.slug,
       surface: SURFACE,

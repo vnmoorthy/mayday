@@ -114,7 +114,7 @@ async function main() {
   const output = redact(inspected.output);
   const safeCommand = redact(command);
 
-  const res = await fetch(`${BASE}/api/v1/mayday`, {
+  const res = await fetch(`${BASE}/api/v1/signal`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({

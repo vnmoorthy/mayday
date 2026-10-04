@@ -7,10 +7,10 @@
 
 import Stripe from "stripe";
 
-const EVENT_NAME = process.env.STRIPE_METER_EVENT_NAME?.trim() || "mayday_rescue";
-const PRODUCT_ID = "mayday_rescue";
+const EVENT_NAME = process.env.STRIPE_METER_EVENT_NAME?.trim() || "pioneer_rescue";
+const PRODUCT_ID = "pioneer_rescue";
 const PRODUCT_NAME = "Pioneer rescue";
-const LOOKUP_KEY = "mayday_rescue_v1";
+const LOOKUP_KEY = "pioneer_rescue_v1";
 const RATE_CENTS = 25;
 
 const key = process.env.STRIPE_SECRET_KEY;
@@ -25,7 +25,7 @@ if (/^(sk|rk)_live_/.test(key)) {
   process.exit(1);
 }
 
-const stripe = new Stripe(key, { appInfo: { name: "mayday-setup", version: "0.1.0" } });
+const stripe = new Stripe(key, { appInfo: { name: "pioneer-setup", version: "0.1.0" } });
 
 async function ensureMeter() {
   for await (const meter of stripe.billing.meters.list({ status: "active", limit: 100 })) {

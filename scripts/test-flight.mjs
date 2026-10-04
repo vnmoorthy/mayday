@@ -64,7 +64,7 @@ function parseArgs(argv) {
     if (a === "--help" || a === "-h") o.help = true;
     else if (a === "--scenario") o.scenario = value();
     else if (a === "--runs") o.runs = Number(value());
-    else if (a === "--no-pioneer" || a === "--no-mayday") o.mayday = false;
+    else if (a === "--no-pioneer") o.mayday = false;
     else if (a === "--url") o.url = value();
     else if (a === "--model") o.model = value();
     else if (a === "--keep") o.keep = true;
@@ -127,7 +127,7 @@ function hookMaydays(logPath) {
 
 async function postHarvest(url, body) {
   try {
-    const res = await fetch(`${url}/api/v1/mayday`, {
+    const res = await fetch(`${url}/api/v1/signal`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
@@ -148,8 +148,8 @@ async function fly(o, n) {
 
   // Fresh working copy outside the repo, so the agent sees only the scenario.
   // The node_modules link lets the scenario import the SDKs installed here.
-  const work = mkdtempSync(join(tmpdir(), `mayday-flight-${o.scenario}-`));
-  const logDir = mkdtempSync(join(tmpdir(), "mayday-flight-log-"));
+  const work = mkdtempSync(join(tmpdir(), `pioneer-flight-${o.scenario}-`));
+  const logDir = mkdtempSync(join(tmpdir(), "pioneer-flight-log-"));
   const log = join(logDir, "maydays.jsonl");
   cpSync(orig, work, { recursive: true });
   symlinkSync(join(REPO, "node_modules"), join(work, "node_modules"), "dir");

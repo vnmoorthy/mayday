@@ -77,7 +77,7 @@ let sent = 0;
 let site = null;
 for (let i = 0; i < COUNT; i++) {
   const agent = AGENTS[i % AGENTS.length];
-  const r = await call("/api/v1/mayday", {
+  const r = await call("/api/v1/signal", {
     error: ERROR,
     vendor: VENDOR,
     surface: SURFACE,

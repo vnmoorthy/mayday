@@ -74,7 +74,7 @@ try {
   let r = await call("/api/v1/approach", { error: ERROR, vendor: VENDOR });
   check("approach: an unseen error is uncharted", r.status === 200 && r.json?.known === false);
 
-  r = await call("/api/v1/mayday", {
+  r = await call("/api/v1/signal", {
     error: ERROR,
     vendor: VENDOR,
     agent: "e2e-pioneer",
@@ -93,7 +93,7 @@ try {
   const agentFlare = r.json?.flare;
   check("flare: an agent leaves a fix", r.status === 200 && agentFlare?.kind === "agent");
 
-  r = await call("/api/v1/mayday", { error: ERROR, vendor: VENDOR, agent: "e2e-follower", minutes_lost: 1 });
+  r = await call("/api/v1/signal", { error: ERROR, vendor: VENDOR, agent: "e2e-follower", minutes_lost: 1 });
   const followerMayday = r.json?.mayday_id;
   check("stop signal: the next agent is handed the pioneer's flare", r.json?.new_site === false && r.json?.flares?.[0]?.id === agentFlare?.id, `${r.json?.site?.maydays_count} agents down`);
 
@@ -123,7 +123,7 @@ try {
   const official = r.json?.flare;
   check("official fix is pinned once the airspace is claimed", r.status === 200 && official?.kind === "official");
 
-  r = await call("/api/v1/mayday", { error: ERROR, vendor: VENDOR, agent: "e2e-third" });
+  r = await call("/api/v1/signal", { error: ERROR, vendor: VENDOR, agent: "e2e-third" });
   check("briefing puts the vendor-pinned fix first", r.json?.flares?.[0]?.kind === "official" && /pinned a fix/i.test(r.json?.headline ?? ""));
   const thirdMayday = r.json?.mayday_id;
 
@@ -199,12 +199,12 @@ try {
   check("trust: a flare that pipes a download into a shell is rejected", r.status === 422, String(r.json?.error ?? "").slice(0, 70));
 
   const fakeKey = "sk_test_" + "A1b2C3d4E5f6G7h8I9j0K1l2";
-  r = await call("/api/v1/mayday", { error: `E2E_REDACTION_${VENDOR}: connect failed with key ${fakeKey} at postgres://app:hunter2@db.example.com/app`, vendor: VENDOR, agent: "e2e-leaky" });
+  r = await call("/api/v1/signal", { error: `E2E_REDACTION_${VENDOR}: connect failed with key ${fakeKey} at postgres://app:hunter2@db.example.com/app`, vendor: VENDOR, agent: "e2e-leaky" });
   const stored = JSON.stringify(r.json ?? {});
   check("trust: secrets in an error are redacted before they are stored", r.status === 201 && stored.includes("[REDACTED]") && !stored.includes(fakeKey) && !stored.includes("hunter2"));
 
   // --- input validation ----------------------------------------------------------
-  r = await call("/api/v1/mayday", {});
+  r = await call("/api/v1/signal", {});
   check("validation: a bad request is a 400", r.status === 400);
   r = await call("/api/v1/site/no-such-site");
   check("validation: an unknown site is a 404", r.status === 404);

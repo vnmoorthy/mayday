@@ -90,13 +90,13 @@ SQL function.
 
 ## Data model
 
-Six tables and one view in `supabase/migrations/0001_mayday.sql`, plus the
+Six tables and one view in `supabase/migrations/0001_pioneer.sql`, plus the
 `routes` table added in `0005` and the `flights` table added in `0009`. The
 migrations, in order:
 
 | Migration | What it adds |
 |---|---|
-| `0001_mayday.sql` | Tables, RLS policies, the write functions, the Realtime publication |
+| `0001_pioneer.sql` | Tables, RLS policies, the write functions, the Realtime publication |
 | `0002_match_both_directions.sql` | `match_site()` scores similarity in both directions |
 | `0003_match_by_error_code.sql` | `match_site()` also matches on shared error codes |
 | `0004_incidents_and_agents.sql` | `site_incidents()` and the per-agent, per-model breakdown |
@@ -544,7 +544,7 @@ leaves the same rows.
 1. `record_rescue()` returns `billable`.
 2. If billable, `billRescue(rescueId, vendor)` looks up the vendor's
    `stripe_customer_id` in `vendor_billing` and sends one meter event:
-   `event_name` (default `mayday_rescue`), payload
+   `event_name` (default `pioneer_rescue`), payload
    `{ stripe_customer_id, value: "1" }`, and **`identifier` = the rescue id**.
 3. `mark_rescue_billed()` sets `billed = true` and stores the identifier in
    `stripe_event`.
